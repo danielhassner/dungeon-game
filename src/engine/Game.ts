@@ -24,54 +24,66 @@ interface Spell {
 
 const ITEM_POOL: Record<string, Item> = {};
 const SPELL_DB: Record<string, Spell> = {
-    'magic_missile': { id: 'magic_missile', name: 'Magic Missile', icon: '✨', image: '/spells/Magic Missile.png', desc: 'Fires a seeking bolt of arcane energy.', type: 'projectile', cooldown: 0.5, damage: 20, color: '#4fc3f7', projectileShape: 'bolt' },
-    'fireball': { id: 'fireball', name: 'Fireball', icon: '🔥', image: '/spells/Fireball.png', desc: 'Launches a massive ball of fire that creates a burning explosion.', type: 'projectile', effect: 'burn', cooldown: 3, damage: 80, color: '#e67e22', projectileShape: 'circle' },
-    'frost_nova': { id: 'frost_nova', name: 'Frost Nova', icon: '❄️', image: '/spells/Frost Nova.png', desc: 'Emits a freezing pulse that slows all nearby enemies.', type: 'aoe', aoeType: 'circle', effect: 'slow', cooldown: 5, damage: 40, color: '#a29bfe' },
-    'heal': { id: 'heal', name: 'Holy Heal', icon: '💖', image: '/spells/Holy Heal.png', desc: 'Restores a significant amount of health to the caster.', type: 'buff', effect: 'regen', cooldown: 10, damage: 50, color: '#2ecc71' },
-    'blink': { id: 'blink', name: 'Ether Blink', icon: '🌀', image: '/spells/Ether Blink.png', desc: 'Instantly teleports the caster to a target location.', type: 'utility', cooldown: 4, damage: 350, color: '#9b59b6' },
-    'poison_cloud': { id: 'poison_cloud', name: 'Toxic Mist', icon: '🤢', image: '/spells/Toxic Mist.png', desc: 'Creates a lingering cloud of toxic acid that burns enemies.', type: 'aoe', aoeType: 'cloud', effect: 'burn', cooldown: 7, damage: 15, color: '#27ae60' },
-    'thunder_bolt': { id: 'thunder_bolt', name: 'Thunder Bolt', icon: '⚡', image: '/spells/Thunder Bolt.png', desc: 'Strikes a single target with heavy lightning, rooting it.', type: 'projectile', effect: 'root', cooldown: 4, damage: 120, color: '#f1c40f', projectileShape: 'bolt' },
-    'arcane_bolt': { id: 'arcane_bolt', name: 'Arcane Bolt', icon: '💠', image: '/spells/Arcane Bolt.png', desc: 'Fires a rapid stream of weak but weakening arcane pulses.', type: 'projectile', effect: 'weaken', cooldown: 0.2, damage: 12, color: '#8e44ad', projectileShape: 'pulse' },
-    'chain_lightning': { id: 'chain_lightning', name: 'Chain Lightning', icon: '⚡', image: '/spells/Chain Lightning.png', desc: 'A lightning strike that arcs between multiple targets.', type: 'projectile', effect: 'chain', cooldown: 4, damage: 60, color: '#f1c40f', projectileShape: 'bolt' },
-    'meteor_fall': { id: 'meteor_fall', name: 'Meteor Fall', icon: '☄️', image: '/spells/Meteor Fall.png', desc: 'Calls down a meteor to strike a targeted area for high damage.', type: 'aoe', aoeType: 'circle', effect: 'burn', cooldown: 12, damage: 250, color: '#d35400' },
-    'ice_spike': { id: 'ice_spike', name: 'Ice Spike', icon: '🧊', image: '/spells/Ice Spike.png', desc: 'Launches a sharp ice dart that slows the target on impact.', type: 'projectile', effect: 'slow', cooldown: 3, damage: 110, color: '#54a0ff', projectileShape: 'bolt' },
-    'vampiric_touch': { id: 'vampiric_touch', name: 'Vampiric Touch', icon: '🧛', image: '/spells/Vampiric Touch.png', desc: 'Drains health from enemies and restores it to the caster.', type: 'projectile', effect: 'lifesteal', cooldown: 5, damage: 35, color: '#c0392b', projectileShape: 'pulse' },
-    'wind_walk': { id: 'wind_walk', name: 'Wind Walk', icon: '🌬️', image: '/spells/Wind Walk.png', desc: 'Increases movement speed significantly for a short duration.', type: 'buff', effect: 'haste', cooldown: 20, damage: 2, color: '#81ecec' },
-    'nova_blast': { id: 'nova_blast', name: 'Nova Blast', icon: '💥', image: '/spells/Nova Blast.png', desc: 'Releases a sudden burst of energy around the caster.', type: 'aoe', aoeType: 'circle', cooldown: 2, damage: 45, color: '#fdcb6e' },
-    'bless': { id: 'bless', name: 'Blessing', icon: '✨', image: '/spells/Blessing.png', desc: 'Grants a continuous health regeneration effect.', type: 'buff', effect: 'regen', cooldown: 25, damage: 8, color: '#fab1a0' },
-    'curse': { id: 'curse', name: 'Dark Curse', icon: '💀', image: '/spells/Dark Curse.png', desc: 'Weakens enemies in an area, reducing their effectiveness.', type: 'aoe', aoeType: 'circle', effect: 'weaken', cooldown: 15, damage: 0, color: '#2d3436' },
-    'radiant_beam': { id: 'radiant_beam', name: 'Radiant Beam', icon: '🔆', image: '/spells/Radiant Beam.png', desc: 'Fires a beam of holy light that burns enemies.', type: 'projectile', effect: 'burn', cooldown: 1, damage: 55, color: '#fff' },
-    'arcane_shield': { id: 'arcane_shield', name: 'Mana Shield', icon: '🛡️', image: '/spells/Mana Shield.png', desc: 'Resets all spell cooldowns for 10 seconds.', type: 'buff', effect: 'shield', cooldown: 15, damage: 12, color: '#3498db' },
-    'venom_dart': { id: 'venom_dart', name: 'Venom Dart', icon: '🏹', image: '/spells/Venom Dart.png', desc: 'Fires a toxic dart that poisons and burns enemies.', type: 'projectile', effect: 'burn', cooldown: 1, damage: 8, color: '#badc58' },
-    'shadow_bolt': { id: 'shadow_bolt', name: 'Shadow Bolt', icon: '🖤', image: '/spells/Shadow Bolt.png', desc: 'Launches a bolt of shadow that strikes fear into enemies.', type: 'projectile', effect: 'fear', cooldown: 1.5, damage: 70, color: '#30336b' },
-    'soul_tear': { id: 'soul_tear', name: 'Soul Tear', icon: '👻', image: '/spells/Soul Tear.png', desc: 'Tears at the target\'s soul, weakening their defenses.', type: 'projectile', effect: 'weaken', cooldown: 8, damage: 120, color: '#95afc0' },
-    'dragon_breath': { id: 'dragon_breath', name: 'Dragon Breath', icon: '🐲', image: '/spells/Dragon Breath.png', desc: 'Breathes fire in a cone in front of the caster.', type: 'aoe', aoeType: 'cone', effect: 'burn', cooldown: 6, damage: 90, color: '#eb4d4b' },
-    'void_nova': { id: 'void_nova', name: 'Void Nova', icon: '🌑', image: '/spells/Void Nova.png', desc: 'An explosion of void energy that causes fear in all nearby enemies.', type: 'aoe', aoeType: 'circle', effect: 'fear', cooldown: 8, damage: 110, color: '#2c3e50' },
-    'soul_reap': { id: 'soul_reap', name: 'Soul Reap', icon: '💀', image: '/spells/Soul Reap.png', desc: 'Reaps the vitality of a target, stealing health.', type: 'projectile', effect: 'lifesteal', cooldown: 6, damage: 95, color: '#4a4a4a' },
-    'astral_blast': { id: 'astral_blast', name: 'Astral Blast', icon: '✨', image: '/spells/Astral Blast.png', desc: 'Cold starlight that slows enemies in their tracks.', type: 'projectile', effect: 'slow', cooldown: 1, damage: 45, color: '#f5f6fa' },
-    'inferno': { id: 'inferno', name: 'Inferno', icon: '🌋', image: '/spells/Inferno.png', desc: 'Ignites a large area, causing continuous fire damage.', type: 'aoe', aoeType: 'cloud', effect: 'burn', cooldown: 15, damage: 200, color: '#e84118' },
-    'storm_strike': { id: 'storm_strike', name: 'Storm Strike', icon: '🌩️', image: '/spells/Storm Strike.png', desc: 'Calls down a lightning strike that arcs to adjacent enemies.', type: 'projectile', effect: 'chain', cooldown: 2.5, damage: 130, color: '#00a8ff' },
-    'earth_quake': { id: 'earth_quake', name: 'Earthquake', icon: '🌍', image: '/spells/Earthquake.png', desc: 'Shakes the ground to slow and damage all nearby enemies.', type: 'aoe', aoeType: 'circle', effect: 'slow', cooldown: 10, damage: 150, color: '#7f8c8d' },
-    'nature_touch': { id: 'nature_touch', name: 'Nature Touch', icon: '🌿', image: '/spells/Nature Touch.png', desc: 'Calls upon nature to rapidly regenerate your health.', type: 'buff', effect: 'regen', cooldown: 12, damage: 70, color: '#4cd137' },
-    'wind_burst': { id: 'wind_burst', name: 'Wind Burst', icon: '🌪️', image: '/spells/Wind Burst.png', desc: 'A blast of wind that causes enemies to flee in panic.', type: 'aoe', aoeType: 'cone', effect: 'fear', cooldown: 4, damage: 65, color: '#dcdde1' },
-    'shadow_step': { id: 'shadow_step', name: 'Shadow Step', icon: '👣', image: '/spells/Shadow Step.png', desc: 'Creates two linked portals for rapid movement.', type: 'utility', cooldown: 12, damage: 0, color: '#2f3640' },
-    'celestial_beam': { id: 'celestial_beam', name: 'Celestial Beam', icon: '🔦', image: '/spells/Celestial Beam.png', desc: 'A focused beam of celestial energy that burns targets.', type: 'projectile', effect: 'burn', cooldown: 7, damage: 180, color: '#f9ca24', projectileShape: 'bolt' },
-    'venom_wave': { id: 'venom_wave', name: 'Venom Wave', icon: '🌊', image: '/spells/Venom Wave.png', desc: 'A wave of toxic spit that poisons enemies in a cone.', type: 'aoe', aoeType: 'cone', effect: 'burn', cooldown: 9, damage: 30, color: '#badc58' },
-    'arcane_storm': { id: 'arcane_storm', name: 'Arcane Storm', icon: '🌀', image: '/spells/Arcane Storm.png', desc: 'Summons an arcane storm that continuously damages an area.', type: 'aoe', aoeType: 'cloud', cooldown: 20, damage: 300, color: '#a29bfe' },
-    'holy_wrath': { id: 'holy_wrath', name: 'Holy Wrath', icon: '⚔️', image: '/spells/Holy Wrath.png', desc: 'Crucifies enemies in a golden cross, rooting them and dealing continuous damage.', type: 'aoe', aoeType: 'circle', cooldown: 12, damage: 140, color: '#ffec8b' },
-    'blood_boil': { id: 'blood_boil', name: 'Blood Boil', icon: '🩸', image: '/spells/Blood Boil.png', desc: 'Heats the blood of nearby enemies to cause burning damage.', type: 'aoe', aoeType: 'circle', effect: 'burn', cooldown: 11, damage: 85, color: '#c0392b' },
-    'iron_skin': { id: 'iron_skin', name: 'Iron Skin', icon: '🔩', image: '/spells/Iron Skin.png', desc: 'Hardens your skin, granting a temporary protective shield.', type: 'buff', effect: 'shield', cooldown: 25, damage: 20, color: '#95afc0' },
-    'gravity_well': { id: 'gravity_well', name: 'Gravity Well', icon: '🕳️', image: '/spells/Gravity Well.png', desc: 'Creates a void that slows and damages enemies within its reach.', type: 'aoe', aoeType: 'cloud', effect: 'slow', cooldown: 14, damage: 160, color: '#130f40' },
-    'chaos_bolt': { id: 'chaos_bolt', name: 'Chaos Bolt', icon: '💠', image: '/spells/Chaos Bolt.png', desc: 'Fires a chaotic projectile that weakens the enemy\'s spirit.', type: 'projectile', effect: 'weaken', cooldown: 0.8, damage: 55, color: '#be2edd' },
-    'frost_lance': { id: 'frost_lance', name: 'Frost Lance', icon: '🔱', image: '/spells/Frost Lance.png', desc: 'A spear of ice that pierces and slows enemies.', type: 'projectile', effect: 'slow', cooldown: 3, damage: 120, color: '#70a1ff', projectileShape: 'bolt' },
-    'sun_fire': { id: 'sun_fire', name: 'Sun Fire', icon: '☀️', image: '/spells/Sun Fire.png', desc: 'Launches a miniature sun that burns and damages enemies.', type: 'projectile', effect: 'burn', cooldown: 6, damage: 95, color: '#f0932b' },
-    'mind_blast': { id: 'mind_blast', name: 'Mind Blast', icon: '🧠', image: '/spells/Mind Blast.png', desc: 'A psychic shock that roots the target in place.', type: 'projectile', effect: 'root', cooldown: 6, damage: 105, color: '#a55eea' },
-    'life_drain': { id: 'life_drain', name: 'Life Drain', icon: '🧪', image: '/spells/Life Drain.png', desc: 'Drains the life force of a target to heal yourself.', type: 'projectile', effect: 'lifesteal', cooldown: 9, damage: 60, color: '#20bf6b' },
-    'thunder_clap': { id: 'thunder_clap', name: 'Thunder Clap', icon: '👏', image: '/spells/Thunder Clap.png', desc: 'A clap of thunder that roots all nearby enemies.', type: 'aoe', aoeType: 'circle', effect: 'root', cooldown: 8, damage: 75, color: '#fed330' },
-    'ethereal_form': { id: 'ethereal_form', name: 'Ethereal Form', icon: '👻', image: '/spells/Ethereal Form.png', desc: 'Become ethereal, increasing your movement speed significantly.', type: 'buff', effect: 'haste', cooldown: 30, damage: 50, color: '#d1d8e0' },
-    'star_fall': { id: 'star_fall', name: 'Star Fall', icon: '🌠', image: '/spells/Star Fall.png', desc: 'Calls down falling stars that burn all enemies in the area.', type: 'aoe', aoeType: 'circle', effect: 'burn', cooldown: 18, damage: 250, color: '#45aaf2' },
-    'burning_vines': { id: 'burning_vines', name: 'Burning Vines', icon: '🎋', image: '/spells/Burning Vines.png', desc: 'Roots enemies in burning vines, causing continuous damage.', type: 'aoe', aoeType: 'cloud', effect: 'root', cooldown: 12, damage: 100, color: '#ff4d4d' },
-    'mirror_image': { id: 'mirror_image', name: 'Mirror Image', icon: '🪞', image: '/spells/Mirror Image.png', desc: 'Summons a mirror image to distract and confuse enemies.', type: 'utility', cooldown: 40, damage: 0, color: '#a29bfe' }
+    'magic_missile': { id: 'magic_missile', name: 'Magic Missile', icon: '✨', image: '', desc: 'Fires a seeking bolt of arcane energy.', type: 'projectile', cooldown: 0.5, damage: 20, color: '#4fc3f7', projectileShape: 'bolt' },
+    'fireball': { id: 'fireball', name: 'Fireball', icon: '🔥', image: '', desc: 'Launches a massive ball of fire that creates a burning explosion.', type: 'projectile', effect: 'burn', cooldown: 3, damage: 80, color: '#e67e22', projectileShape: 'circle' },
+    'frost_nova': { id: 'frost_nova', name: 'Frost Nova', icon: '❄️', image: '', desc: 'Emits a freezing pulse that slows all nearby enemies.', type: 'aoe', aoeType: 'circle', effect: 'slow', cooldown: 5, damage: 40, color: '#a29bfe' },
+    'heal': { id: 'heal', name: 'Holy Heal', icon: '💖', image: '', desc: 'Restores a significant amount of health to the caster.', type: 'buff', effect: 'regen', cooldown: 10, damage: 50, color: '#2ecc71' },
+    'blink': { id: 'blink', name: 'Ether Blink', icon: '🌀', image: '', desc: 'Instantly teleports the caster to a target location.', type: 'utility', cooldown: 4, damage: 350, color: '#9b59b6' },
+    'toxic_mist': { id: 'toxic_mist', name: 'Toxic Mist', icon: '🤢', image: '', desc: 'Creates a lingering cloud of toxic acid that burns enemies.', type: 'aoe', aoeType: 'cloud', effect: 'burn', cooldown: 7, damage: 15, color: '#27ae60' },
+    'thunder_bolt': { id: 'thunder_bolt', name: 'Thunder Bolt', icon: '⚡', image: '', desc: 'Strikes a single target with heavy lightning, rooting it.', type: 'projectile', effect: 'root', cooldown: 4, damage: 120, color: '#f1c40f', projectileShape: 'bolt' },
+    'arcane_bolt': { id: 'arcane_bolt', name: 'Arcane Bolt', icon: '💠', image: '', desc: 'Fires a rapid stream of weak but weakening arcane pulses.', type: 'projectile', effect: 'weaken', cooldown: 0.2, damage: 12, color: '#8e44ad', projectileShape: 'pulse' },
+    'chain_lightning': { id: 'chain_lightning', name: 'Chain Lightning', icon: '🌩️', image: '', desc: 'A lightning strike that arcs between multiple targets.', type: 'projectile', effect: 'chain', cooldown: 4, damage: 60, color: '#f1c40f', projectileShape: 'bolt' },
+    'meteor_fall': { id: 'meteor_fall', name: 'Meteor Fall', icon: '☄️', image: '', desc: 'Calls down a meteor to strike a targeted area for high damage.', type: 'aoe', aoeType: 'circle', effect: 'burn', cooldown: 12, damage: 250, color: '#d35400' },
+    'ice_spike': { id: 'ice_spike', name: 'Ice Spike', icon: '🧊', image: '', desc: 'Launches a sharp ice dart that slows the target on impact.', type: 'projectile', effect: 'slow', cooldown: 3, damage: 110, color: '#54a0ff', projectileShape: 'bolt' },
+    'vampiric_touch': { id: 'vampiric_touch', name: 'Vampiric Touch', icon: '🧛', image: '', desc: 'Drains health from enemies and restores it to the caster.', type: 'projectile', effect: 'lifesteal', cooldown: 5, damage: 35, color: '#c0392b', projectileShape: 'pulse' },
+    'wind_walk': { id: 'wind_walk', name: 'Wind Walk', icon: '🌬️', image: '', desc: 'Increases movement speed significantly for a short duration.', type: 'buff', effect: 'haste', cooldown: 20, damage: 2, color: '#81ecec' },
+    'nova_blast': { id: 'nova_blast', name: 'Nova Blast', icon: '💥', image: '', desc: 'Releases a sudden burst of energy around the caster.', type: 'aoe', aoeType: 'circle', cooldown: 2, damage: 45, color: '#fdcb6e' },
+    'bless': { id: 'bless', name: 'Blessing', icon: '🕯️', image: '', desc: 'Grants a continuous health regeneration effect.', type: 'buff', effect: 'regen', cooldown: 25, damage: 8, color: '#fab1a0' },
+    'curse': { id: 'curse', name: 'Dark Curse', icon: '💀', image: '', desc: 'Weakens enemies in an area, reducing their effectiveness.', type: 'aoe', aoeType: 'circle', effect: 'weaken', cooldown: 15, damage: 0, color: '#2d3436' },
+    'radiant_beam': { id: 'radiant_beam', name: 'Radiant Beam', icon: '🔆', image: '', desc: 'Fires a beam of holy light that burns enemies.', type: 'projectile', effect: 'burn', cooldown: 1, damage: 55, color: '#fff' },
+    'arcane_shield': { id: 'arcane_shield', name: 'Mana Shield', icon: '🛡️', image: '', desc: 'Resets all spell cooldowns for 10 seconds.', type: 'buff', effect: 'shield', cooldown: 15, damage: 12, color: '#3498db' },
+    'venom_dart': { id: 'venom_dart', name: 'Venom Dart', icon: '🏹', image: '', desc: 'Fires a toxic dart that poisons and burns enemies.', type: 'projectile', effect: 'burn', cooldown: 1, damage: 8, color: '#badc58' },
+    'shadow_bolt': { id: 'shadow_bolt', name: 'Shadow Bolt', icon: '🖤', image: '', desc: 'Launches a bolt of shadow that strikes fear into enemies.', type: 'projectile', effect: 'fear', cooldown: 1.5, damage: 70, color: '#30336b' },
+    'soul_tear': { id: 'soul_tear', name: 'Soul Tear', icon: '👻', image: '', desc: 'Tears at the target\'s soul, weakening their defenses.', type: 'projectile', effect: 'weaken', cooldown: 8, damage: 120, color: '#95afc0' },
+    'dragon_breath': { id: 'dragon_breath', name: 'Dragon Breath', icon: '🐲', image: '', desc: 'Breathes fire in a cone in front of the caster.', type: 'aoe', aoeType: 'cone', effect: 'burn', cooldown: 6, damage: 90, color: '#eb4d4b' },
+    'void_nova': { id: 'void_nova', name: 'Void Nova', icon: '🌑', image: '', desc: 'An explosion of void energy that causes fear in all nearby enemies.', type: 'aoe', aoeType: 'circle', effect: 'fear', cooldown: 8, damage: 110, color: '#2c3e50' },
+    'soul_reap': { id: 'soul_reap', name: 'Soul Reap', icon: '🪦', image: '', desc: 'Reaps the vitality of a target, stealing health.', type: 'projectile', effect: 'lifesteal', cooldown: 6, damage: 95, color: '#4a4a4a' },
+    'astral_blast': { id: 'astral_blast', name: 'Astral Blast', icon: '🌟', image: '', desc: 'Cold starlight that slows enemies in their tracks.', type: 'projectile', effect: 'slow', cooldown: 1, damage: 45, color: '#f5f6fa' },
+    'inferno': { id: 'inferno', name: 'Inferno', icon: '🌋', image: '', desc: 'Ignites a large area, causing continuous fire damage.', type: 'aoe', aoeType: 'cloud', effect: 'burn', cooldown: 15, damage: 200, color: '#e84118' },
+    'storm_strike': { id: 'storm_strike', name: 'Storm Strike', icon: '⛈️', image: '', desc: 'Calls down a lightning strike that arcs to adjacent enemies.', type: 'projectile', effect: 'chain', cooldown: 2.5, damage: 130, color: '#00a8ff' },
+    'earth_quake': { id: 'earth_quake', name: 'Earthquake', icon: '🌍', image: '', desc: 'Shakes the ground to slow and damage all nearby enemies.', type: 'aoe', aoeType: 'circle', effect: 'slow', cooldown: 10, damage: 150, color: '#7f8c8d' },
+    'nature_touch': { id: 'nature_touch', name: 'Nature Touch', icon: '🌿', image: '', desc: 'Calls upon nature to rapidly regenerate your health.', type: 'buff', effect: 'regen', cooldown: 12, damage: 70, color: '#4cd137' },
+    'wind_burst': { id: 'wind_burst', name: 'Wind Burst', icon: '🌪️', image: '', desc: 'A blast of wind that causes enemies to flee in panic.', type: 'aoe', aoeType: 'cone', effect: 'fear', cooldown: 4, damage: 65, color: '#dcdde1' },
+    'shadow_step': { id: 'shadow_step', name: 'Shadow Step', icon: '👣', image: '', desc: 'Creates two linked portals for rapid movement.', type: 'utility', cooldown: 12, damage: 0, color: '#2f3640' },
+    'celestial_beam': { id: 'celestial_beam', name: 'Celestial Beam', icon: '🔦', image: '', desc: 'A focused beam of celestial energy that burns targets.', type: 'projectile', effect: 'burn', cooldown: 7, damage: 180, color: '#f9ca24', projectileShape: 'bolt' },
+    'venom_wave': { id: 'venom_wave', name: 'Venom Wave', icon: '🌊', image: '', desc: 'A wave of toxic spit that poisons enemies in a cone.', type: 'aoe', aoeType: 'cone', effect: 'burn', cooldown: 9, damage: 30, color: '#badc58' },
+    'arcane_storm': { id: 'arcane_storm', name: 'Arcane Storm', icon: '�', image: '', desc: 'Summons an arcane storm that continuously damages an area.', type: 'aoe', aoeType: 'cloud', cooldown: 20, damage: 300, color: '#a29bfe' },
+    'holy_wrath': { id: 'holy_wrath', name: 'Holy Wrath', icon: '⚔️', image: '', desc: 'Crucifies enemies in a golden cross, rooting them and dealing continuous damage.', type: 'aoe', aoeType: 'circle', cooldown: 12, damage: 140, color: '#ffec8b' },
+    'blood_boil': { id: 'blood_boil', name: 'Blood Boil', icon: '🩸', image: '', desc: 'Heats the blood of nearby enemies to cause burning damage.', type: 'aoe', aoeType: 'circle', effect: 'burn', cooldown: 11, damage: 85, color: '#c0392b' },
+    'iron_skin': { id: 'iron_skin', name: 'Iron Skin', icon: '🔩', image: '', desc: 'Hardens your skin, granting a temporary protective shield.', type: 'buff', effect: 'shield', cooldown: 25, damage: 20, color: '#95afc0' },
+    'gravity_well': { id: 'gravity_well', name: 'Gravity Well', icon: '🕳️', image: '', desc: 'Creates a void that slows and damages enemies within its reach.', type: 'aoe', aoeType: 'cloud', effect: 'slow', cooldown: 14, damage: 160, color: '#130f40' },
+    'chaos_bolt': { id: 'chaos_bolt', name: 'Chaos Bolt', icon: '🎲', image: '', desc: 'Fires a chaotic projectile that weakens the enemy\'s spirit.', type: 'projectile', effect: 'weaken', cooldown: 0.8, damage: 55, color: '#be2edd' },
+    'frost_lance': { id: 'frost_lance', name: 'Frost Lance', icon: '🔱', image: '', desc: 'A spear of ice that pierces and slows enemies.', type: 'projectile', effect: 'slow', cooldown: 3, damage: 120, color: '#70a1ff', projectileShape: 'bolt' },
+    'sun_fire': { id: 'sun_fire', name: 'Sun Fire', icon: '☀️', image: '', desc: 'Launches a miniature sun that burns and damages enemies.', type: 'projectile', effect: 'burn', cooldown: 6, damage: 95, color: '#f0932b' },
+    'mind_blast': { id: 'mind_blast', name: 'Mind Blast', icon: '🧠', image: '', desc: 'A psychic shock that roots the target in place.', type: 'projectile', effect: 'root', cooldown: 6, damage: 105, color: '#a55eea' },
+    'life_drain': { id: 'life_drain', name: 'Life Drain', icon: '🧪', image: '', desc: 'Drains the life force of a target to heal yourself.', type: 'projectile', effect: 'lifesteal', cooldown: 9, damage: 60, color: '#20bf6b' },
+    'thunder_clap': { id: 'thunder_clap', name: 'Thunder Clap', icon: '👏', image: '', desc: 'A clap of thunder that roots all nearby enemies.', type: 'aoe', aoeType: 'circle', effect: 'root', cooldown: 8, damage: 75, color: '#fed330' },
+    'ethereal_form': { id: 'ethereal_form', name: 'Ethereal Form', icon: '🌫️', image: '', desc: 'Become ethereal, increasing your movement speed significantly.', type: 'buff', effect: 'haste', cooldown: 30, damage: 50, color: '#d1d8e0' },
+    'star_fall': { id: 'star_fall', name: 'Star Fall', icon: '🌠', image: '', desc: 'Calls down falling stars that burn all enemies in the area.', type: 'aoe', aoeType: 'circle', effect: 'burn', cooldown: 18, damage: 250, color: '#45aaf2' },
+    'burning_vines': { id: 'burning_vines', name: 'Burning Vines', icon: '🎋', image: '', desc: 'Roots enemies in burning vines, causing continuous damage.', type: 'aoe', aoeType: 'cloud', effect: 'root', cooldown: 12, damage: 100, color: '#ff4d4d' },
+    'mirror_image': { id: 'mirror_image', name: 'Mirror Image', icon: '🪞', image: '', desc: 'Summons a mirror image to distract and confuse enemies.', type: 'utility', cooldown: 40, damage: 0, color: '#a29bfe' },
+    // NEW SPELLS
+    'petrify': { id: 'petrify', name: 'Petrify', icon: '🗿', image: '', desc: 'Turns the target to stone, rooting them for a long duration.', type: 'projectile', effect: 'root', cooldown: 12, damage: 40, color: '#95afc0', projectileShape: 'pulse' },
+    'midas_touch': { id: 'midas_touch', name: 'Midas Touch', icon: '🪙', image: '', desc: 'Marks an enemy; if killed, they drop significantly more gold.', type: 'projectile', effect: 'weaken', cooldown: 20, damage: 10, color: '#f1c40f', projectileShape: 'pulse' },
+    'abyssal_pull': { id: 'abyssal_pull', name: 'Abyssal Pull', icon: '🧲', image: '', desc: 'Creates a magnetic rift that pulls all nearby enemies to its center.', type: 'aoe', aoeType: 'circle', cooldown: 15, damage: 80, color: '#130f40' },
+    'chrono_warp': { id: 'chrono_warp', name: 'Chronos Warp', icon: '⏳', image: '', desc: 'Accelerates your time, granting haste and resetting a random cooldown.', type: 'buff', effect: 'haste', cooldown: 45, damage: 0, color: '#3498db' },
+    'living_bomb': { id: 'living_bomb', name: 'Living Bomb', icon: '💣', image: '', desc: 'Attaches a volatile charge to an enemy that explodes after a delay.', type: 'projectile', effect: 'burn', cooldown: 10, damage: 150, color: '#e67e22', projectileShape: 'circle' },
+    'chaos_nova': { id: 'chaos_nova', name: 'Chaos Nova', icon: '🎰', image: '', desc: 'Releases a burst of unpredictable energy with a random status effect.', type: 'aoe', aoeType: 'circle', cooldown: 8, damage: 100, color: '#be2edd' },
+    'spectral_wall': { id: 'spectral_wall', name: 'Spectral Wall', icon: '🧱', image: '', desc: 'Creates a line of spectral energy that damages and slows enemies.', type: 'aoe', aoeType: 'cone', effect: 'slow', cooldown: 12, damage: 120, color: '#d1d8e0' },
+    'emerald_spores': { id: 'emerald_spores', name: 'Emerald Spores', icon: '🍄', image: '', desc: 'Releases a cloud of spores that causes enemies to wander in confusion.', type: 'aoe', aoeType: 'cloud', effect: 'fear', cooldown: 14, damage: 30, color: '#2ecc71' },
+    'prismatic_ray': { id: 'prismatic_ray', name: 'Prismatic Ray', icon: '🌈', image: '', desc: 'Fires a piercing beam that applies a random weakness to all struck.', type: 'projectile', effect: 'weaken', cooldown: 6, damage: 90, color: '#fff', projectileShape: 'bolt' },
+    'soul_harvest': { id: 'soul_harvest', name: 'Soul Harvest', icon: '🏺', image: '', desc: 'Drains the life force of all nearby enemies to heal yourself.', type: 'aoe', aoeType: 'circle', effect: 'lifesteal', cooldown: 25, damage: 60, color: '#c0392b' },
+    'electric_shield': { id: 'electric_shield', name: 'Electric Shield', icon: '⛓️', image: '', desc: 'Surrounds you with chains of lightning that damage nearby attackers.', type: 'buff', effect: 'shield', cooldown: 30, damage: 40, color: '#f1c40f' }
 };
 
 const materials = ['Ancient', 'Imperial', 'Mithril', 'Dragonglass', 'Abyssal', 'Celestial', 'Relic'];
@@ -128,7 +140,11 @@ const MERCHANT_DIALOGUES = [
     "Everything I sell has a story. Most end in blood.",
     "Take your time. Good equipment is the difference between life and death.",
     "I'm going to tickle you little boy🤪🤪",
-    "Go fuck yourself"
+    "Go fuck yourself",
+    "Praying on your downfall",
+    "Some of these ogre chicks been eyeing me recently if you catch my meaning🥴🥴",
+    "Not only do I have to sit here, but now your ugly ass is in my face too",
+    "You're lucky I'm untrained in medieval arts"
 ];
 
 function initDB() {
@@ -223,6 +239,17 @@ class FieldEffect {
                         if (tiles.some(t => cx + t[0] === ex && cy + t[1] === ey)) {
                             e.hp -= this.damage; e.rootTimer = 0.6; // Keep rooted during effect
                             if (e.hp <= 0) game.killEnemy(e);
+                        }
+                    }
+                });
+            } else if (this.type === 'abyssal_pull') {
+                level.entities.forEach(e => {
+                    if (e.type === 'enemy' && !e.dead) {
+                        const dist = Math.hypot(this.x - e.x, this.y - e.y);
+                        if (dist < this.radius) {
+                            const angle = Math.atan2(this.y - e.y, this.x - e.x);
+                            e.x += Math.cos(angle) * 100; e.y += Math.sin(angle) * 100; // Drag toward center
+                            e.hp -= this.damage; if (e.hp <= 0) game.killEnemy(e);
                         }
                     }
                 });
@@ -331,8 +358,10 @@ class InputHandler {
 
 class Projectile {
     x: number; y: number; vx: number; vy: number; type: string; owner: any; dead = false; damage: number; color: string; shape: string; effect: string | undefined;
+    timer: number = 0; attachedTo: any = null;
     constructor(x: number, y: number, a: number, t: string, o: any, d: number, c = '#fff', s = 'circle', e?: string) {
-        this.x = x; this.y = y; const spd = t === 'fireball' ? 550 : 800; this.vx = Math.cos(a) * spd; this.vy = Math.sin(a) * spd; this.type = t; this.owner = o; this.damage = d; this.color = c; this.shape = s; this.effect = e;
+        this.x = x; this.y = y; const spd = t === 'fireball' || t === 'living_bomb' ? 550 : 800; this.vx = Math.cos(a) * spd; this.vy = Math.sin(a) * spd; this.type = t; this.owner = o; this.damage = d; this.color = c; this.shape = s; this.effect = e;
+        if (t === 'living_bomb') this.timer = 1.0;
     }
     update(dt: number, level: Level, game: Game) {
         // Slight homing for magic missile
@@ -352,13 +381,26 @@ class Projectile {
             }
         }
 
+        if (this.attachedTo) {
+            this.x = this.attachedTo.x; this.y = this.attachedTo.y;
+            this.timer -= dt;
+            if (this.timer <= 0 || this.attachedTo.dead) { this.explode(level, game); this.dead = true; }
+            return;
+        }
+
         this.x += this.vx * dt; this.y += this.vy * dt;
-        if (level.isWall(this.x, this.y)) { if (this.type === 'fireball') this.explode(level, game); this.dead = true; return; }
+        if (level.isWall(this.x, this.y)) { if (this.type === 'fireball' || this.type === 'living_bomb') this.explode(level, game); this.dead = true; return; }
         level.entities.forEach(e => {
             if (e.type === 'enemy' && !e.dead && Math.hypot(this.x - e.x, this.y - e.y) < 35) {
                 // Prevent friendly fire: enemies shouldn't damage each other
                 if (this.owner && this.owner.type === 'enemy') return;
+
                 if (this.type === 'fireball') this.explode(level, game);
+                else if (this.type === 'living_bomb') {
+                    this.attachedTo = e;
+                    this.vx = 0; this.vy = 0;
+                    game.log("Bomb attached!");
+                }
                 else {
                     e.hp -= this.damage;
                     if (this.effect === 'lifesteal') game.player.hp = Math.min(game.player.maxHp, game.player.hp + this.damage * 0.3);
@@ -376,7 +418,7 @@ class Projectile {
                     // Lich ability logic remains (if any was here, it's not in the provided original snippet)
                     if (e.hp <= 0) game.killEnemy(e);
                 }
-                this.dead = true;
+                if (!this.attachedTo) this.dead = true;
             }
         });
     }
@@ -644,6 +686,28 @@ class Level {
         });
         this.entities.push({ x: rx * 64 + 32, y: ry * 64 + 32, type: 'npc', name: 'Merchant', inventory: sortedStock, dead: false });
     }
+    spawnGodMerchant() {
+        // Find a clear spot near spawn
+        const gx = Math.floor(this.spawnX / 64) + 2;
+        const gy = Math.floor(this.spawnY / 64);
+        if (this.tiles[gy][gx] === 1) this.tiles[gy][gx] = 0; // Force clear floor
+
+        const allItems = Object.values(ITEM_POOL).filter(it => it.id !== 'start_dagger');
+        // Sort items by type for better shop organization
+        allItems.sort((a, b) => {
+            const types = ['weapon', 'helmet', 'chestplate', 'leggings', 'boots', 'potion', 'spellbook', 'key'];
+            return types.indexOf(a.type) - types.indexOf(b.type);
+        });
+
+        this.entities.push({
+            x: gx * 64 + 32,
+            y: gy * 64 + 32,
+            type: 'npc',
+            name: 'God Merchant',
+            inventory: allItems,
+            dead: false
+        });
+    }
     isWall(x: number, y: number) { const tx = Math.floor(x / 64), ty = Math.floor(y / 64); if (tx < 0 || tx >= this.width || ty < 0 || ty >= this.height) return true; return this.tiles[ty][tx] === 1 || this.tiles[ty][tx] === 2; }
 }
 
@@ -833,13 +897,19 @@ export class Game {
     currentDialogue: string = "";
     shadowStepState: { p1: { x: number, y: number } | null } = { p1: null };
     portals: Portal[] = [];
-    constructor(canvas: HTMLCanvasElement) {
+    isSandbox: boolean = false;
+    constructor(canvas: HTMLCanvasElement, sandbox = false) {
         this.canvas = canvas; this.ctx = canvas.getContext('2d')!;
+        this.isSandbox = sandbox;
         this.camera = new Camera(canvas.width, canvas.height);
         this.input = new InputHandler(canvas);
         (window as any).game = this; // Set before level generation to allow depth tracking
         this.goToLevel(1, true);
         this.player = new Player(this.level.spawnX, this.level.spawnY);
+        if (this.isSandbox) {
+            this.player.gold = 999999;
+            this.log("SANDBOX MODE ACTIVE: Infinite items and free shopping!");
+        }
         this.setupUI();
         window.addEventListener('resize', () => {
             this.canvas.width = window.innerWidth;
@@ -961,6 +1031,66 @@ export class Game {
             this.fieldEffects.push(new FieldEffect(m.x, m.y, 64, 5, 'crucifixion', '#f1c40f', s.damage / 10, this.player));
             this.log("CRUCIFIXION!");
         }
+        else if (s.id === 'abyssal_pull') {
+            const m = this.input.mousePosWorld;
+            this.particles.push({ x: m.x, y: m.y, life: 0.8, type: 'explosion', color: '#130f40' });
+            this.level.entities.forEach(e => {
+                if (e.type === 'enemy' && !e.dead && Math.hypot(m.x - e.x, m.y - e.y) < 350) {
+                    const angle = Math.atan2(m.y - e.y, m.x - e.x);
+                    e.x += Math.cos(angle) * 150; e.y += Math.sin(angle) * 150; // Violent pull
+                    e.hp -= s.damage; if (e.hp <= 0) this.killEnemy(e);
+                }
+            });
+            this.log("THE ABYSS PULLS!");
+        }
+        else if (s.id === 'chrono_warp') {
+            this.player.manaShieldTimer = 6; // Reuse mana shield for cooldown reset
+            this.log("TIME BENDS TO YOUR WILL!");
+            this.particles.push({ x: this.player.x, y: this.player.y, life: 0.5, type: 'explosion', color: '#3498db' });
+        }
+        else if (s.id === 'chaos_nova') {
+            const m = this.input.mousePosWorld;
+            const effects: Spell['effect'][] = ['burn', 'slow', 'fear', 'root'];
+            const eff = effects[Math.floor(Math.random() * effects.length)];
+            this.particles.push({ x: m.x, y: m.y, life: 0.6, type: 'explosion', color: '#be2edd' });
+            this.level.entities.forEach(e => {
+                if (e.type === 'enemy' && !e.dead && Math.hypot(m.x - e.x, m.y - e.y) < 280) {
+                    e.hp -= s.damage;
+                    if (eff === 'slow') e.slowTimer = 5;
+                    if (eff === 'burn') { e.burnTimer = 5; e.burnDamage = 20; }
+                    if (eff === 'fear') e.fearTimer = 4;
+                    if (eff === 'root') e.rootTimer = 3;
+                    if (e.hp <= 0) this.killEnemy(e);
+                }
+            });
+            this.log(`CHAOS! Effect applied: ${eff}`);
+        }
+        else if (s.id === 'soul_harvest') {
+            const m = this.input.mousePosWorld;
+            let hits = 0;
+            this.level.entities.forEach(e => {
+                if (e.type === 'enemy' && !e.dead && Math.hypot(m.x - e.x, m.y - e.y) < 250) {
+                    e.hp -= s.damage; hits++;
+                    if (e.hp <= 0) this.killEnemy(e);
+                    this.particles.push({ x: e.x, y: e.y, life: 0.4, type: 'spark', color: '#c0392b' });
+                }
+            });
+            if (hits > 0) {
+                const heal = hits * 10;
+                this.player.hp = Math.min(this.player.maxHp, this.player.hp + heal);
+                this.log(`Harvested ${hits} souls, restored ${heal} HP!`);
+            }
+        }
+        else if (s.id === 'electric_shield') {
+            this.log("STATIC CHARGE ACTIVE!");
+            this.particles.push({ x: this.player.x, y: this.player.y, life: 1, type: 'explosion', color: '#f1c40f' });
+            // Implementation: Simple temporary buff handled by shield effect naturally
+            this.player.ac += 10;
+            setTimeout(() => {
+                this.player.ac -= 10;
+                this.log("Electric shield dissipated.");
+            }, 10000);
+        }
         this.log(`Casting ${s.name}`);
         this.player.cooldowns[sId] = s.cooldown; this.bufferedSpellSlot = null;
     }
@@ -1081,6 +1211,7 @@ export class Game {
         if (e.type === 'npc') {
             uiDiag.style.display = 'block';
             const diagText = document.getElementById('dialogue-text')!;
+            document.getElementById('merchant-name')!.innerText = e.name || "Master Merchant";
             this.currentDialogue = MERCHANT_DIALOGUES[Math.floor(Math.random() * MERCHANT_DIALOGUES.length)];
             diagText.innerHTML = `"${this.currentDialogue}"`;
 
@@ -1138,12 +1269,16 @@ export class Game {
             sl.onmouseenter = ev => this.showTT(it, ev.clientX, ev.clientY);
             sl.onmouseleave = () => this.hideTT();
             const priceMult = 1 + this.currentDepth * 0.05;
-            const finalPrice = Math.floor(it.price * priceMult);
+            const finalPrice = this.isSandbox ? 0 : Math.floor(it.price * priceMult);
             sl.onclick = () => {
                 if (p.gold >= finalPrice) {
                     if (p.addItem(it)) {
-                        p.gold -= finalPrice;
-                        e.inventory.splice(idx, 1);
+                        if (!this.isSandbox) {
+                            p.gold -= finalPrice;
+                            e.inventory.splice(idx, 1);
+                        } else {
+                            // Infinite supply in sandbox: don't splice
+                        }
                         this.hideTT();
                         this.renderShop(e);
                         this.renderInventory();
@@ -1180,14 +1315,15 @@ export class Game {
 
         // Dynamic Gold Drop
         const gMult = e.enemyType === 'Ogre' ? 3 : (e.enemyType === 'Lich' ? 5 : 1);
-        const goldVal = Math.floor((10 + Math.random() * 20) * (1 + this.currentDepth * 0.2) * gMult);
+        let goldVal = Math.floor((10 + Math.random() * 20) * (1 + this.currentDepth * 0.2) * gMult);
+        if (e.weakenTimer > 0) goldVal *= 4; // Midas Touch effect: 4x gold if weakened (proxy for Midas effect)
         loot.push({
             id: 'gold_pile',
             name: `${goldVal} Gold Coins`,
             type: 'potion',
             value: goldVal,
             price: 0,
-            icon: '💰',
+            icon: '🪙',
             image: '',
             desc: 'A small pile of gold coins.',
             rarity: 'mithril'
@@ -1197,6 +1333,11 @@ export class Game {
     }
     goToLevel(d: number, down: boolean) {
         this.currentDepth = d; if (!this.levels.has(d)) this.levels.set(d, new Level(40 + d * 2, 40 + d * 2, d)); this.level = this.levels.get(d)!; this.projectiles = []; this.log(`Floor ${d}...`);
+
+        if (this.isSandbox && d === 1) {
+            this.level.spawnGodMerchant();
+        }
+
         if (this.player) {
             const t = down ? 'stairs-up' : 'stairs-down', sts = this.level.entities.find(ent => ent.type === t);
             if (sts) { const os = [[0, 80], [0, -80], [80, 0], [-80, 0]]; let f = false; for (let o of os) if (!this.level.isWall(sts.x + o[0], sts.y + o[1])) { this.player.x = sts.x + o[0]; this.player.y = sts.y + o[1]; f = true; break; } if (!f) { this.player.x = sts.x; this.player.y = sts.y; } }

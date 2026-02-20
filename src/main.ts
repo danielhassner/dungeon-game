@@ -4,7 +4,7 @@ import { Game } from './engine/Game'
 document.addEventListener('DOMContentLoaded', () => {
     let gameInstance: Game | null = null;
 
-    const startAdventure = () => {
+    const startAdventure = (sandbox = false) => {
         const homeView = document.getElementById('home-view');
         const gameView = document.getElementById('game-view');
         const canvas = document.getElementById('game-canvas') as HTMLCanvasElement;
@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 canvas.width = window.innerWidth;
                 canvas.height = window.innerHeight;
 
-                gameInstance = new Game(canvas);
+                gameInstance = new Game(canvas, sandbox);
                 gameInstance.start();
             }, 500);
         }
@@ -30,7 +30,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Start Game
     const startBtn = document.getElementById('start-btn');
-    startBtn?.addEventListener('click', startAdventure);
+    startBtn?.addEventListener('click', () => startAdventure(false));
+
+    const sandboxBtn = document.getElementById('sandbox-btn');
+    sandboxBtn?.addEventListener('click', () => startAdventure(true));
 
     // Restart Logic
     const restartBtn = document.getElementById('restart-btn');
