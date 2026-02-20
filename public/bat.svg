@@ -1,0 +1,9 @@
+<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <path d="M50 50 Q30 30 10 50 Q30 40 50 50 Q70 40 90 50 Q70 30 50 50" fill="#222">
+    <animate attributeName="d" 
+      values="M50 50 Q30 30 10 50 Q30 40 50 50 Q70 40 90 50 Q70 30 50 50;
+              M50 50 Q30 70 10 50 Q30 60 50 50 Q70 60 90 50 Q70 70 50 50;
+              M50 50 Q30 30 10 50 Q30 40 50 50 Q70 40 90 50 Q70 30 50 50" 
+      dur="0.4s" repeatCount="indefinite" />
+  </path>
+</svg>

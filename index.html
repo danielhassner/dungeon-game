@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Baldur's Gate: Forbidden Dungeon</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=MedievalSharp&family=Pirata+One&display=swap" rel="stylesheet">
+</head>
+
+<body>
+  <div id="app">
+    <!-- 3D Home Screen -->
+    <div id="home-view">
+      <div class="dungeon-container">
+        <div class="ceiling"></div>
+        <div class="wall wall-left"></div>
+        <div class="wall wall-right"></div>
+        <div class="floor"></div>
+        <div class="back-wall"></div>
+      </div>
+      <div class="environmental-layer">
+        <div class="torch left-torch"><img src="/torch.svg" alt="torch" />
+          <div class="torch-glow"></div>
+        </div>
+        <div class="torch right-torch"><img src="/torch.svg" alt="torch" />
+          <div class="torch-glow"></div>
+        </div>
+        <div class="skeleton-container"><img src="/skeleton.svg" alt="skeleton" class="skeleton" /></div>
+        <div id="bat-container"></div>
+      </div>
+      <div class="vignette"></div>
+      <main class="home-screen">
+        <header class="game-title">
+          <h1 class="glow">THE FORBIDDEN</h1>
+          <h2 class="sub-title">DUNGEON</h2>
+        </header>
+        <nav class="menu">
+          <button id="start-btn" class="menu-btn stone-texture">START ADVENTURE</button>
+          <button id="load-btn" class="menu-btn stone-texture">LOAD SAGA</button>
+          <button id="quit-btn" class="menu-btn stone-texture">ABANDON QUEST</button>
+        </nav>
+      </main>
+    </div>
+
+    <!-- RPG Game View -->
+    <div id="game-view" style="display: none;">
+      <canvas id="game-canvas"></canvas>
+
+      <!-- Right Sidebar (Character Stats) -->
+      <aside class="sidebar sidebar-right">
+        <div class="portrait-container">
+          <div class="character-portrait active">
+            <div class="hp-border"></div>
+            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=adventurer" alt="Player" />
+          </div>
+        </div>
+        <div class="stat-panel parchment">
+          <h3 id="stat-name">The Traveler</h3>
+          <p id="stat-level">Level: 1</p>
+          <div class="xp-container">
+            <div id="xp-bar"></div>
+          </div>
+          <p id="stat-ac">AC: 10</p>
+          <p id="stat-xp-val">XP: 0</p>
+          <p id="gold-count">Gold: 0</p>
+        </div>
+      </aside>
+
+      <!-- Bottom Bar (Actions & Logs) -->
+      <footer class="bottom-bar">
+        <div id="message-log" class="parchment">
+          <div id="log-content">Your saga unfolds...</div>
+        </div>
+      </footer>
+
+      <!-- Floating HP HUD -->
+      <div class="top-hud">
+        <div id="hp-bar-container">
+          <div id="hp-bar"></div>
+          <span id="hp-text">100/100</span>
+        </div>
+        <div class="status-indicators">
+          <span id="stat-depth">Depth: 1</span>
+          <span id="inventory-toggle" class="icon-btn" title="Inventory (I)">🎒</span>
+        </div>
+      </div>
+
+      <!-- Overlays Core -->
+      <div id="spell-hotbar">
+        <div class="hotbar-slot" data-slot="0"></div>
+        <div class="hotbar-slot" data-slot="1"></div>
+        <div class="hotbar-slot" data-slot="2"></div>
+        <div class="hotbar-slot" data-slot="3"></div>
+        <div class="hotbar-slot" data-slot="4"></div>
+        <div class="hotbar-slot" data-slot="5"></div>
+        <div class="hotbar-slot" data-slot="6"></div>
+        <div class="hotbar-slot" data-slot="7"></div>
+      </div>
+
+      <div id="game-tooltip" class="parchment tooltip" style="display: none;">
+        <h4 id="tt-name"></h4>
+        <p id="tt-type"></p>
+        <div id="tt-stats"></div>
+        <p id="tt-desc"></p>
+        <div id="tt-price"></div>
+      </div>
+
+      <div id="comparison-tooltip" class="parchment tooltip" style="display: none;">
+        <div class="compare-tag">CURRENTLY EQUIPPED</div>
+        <h4 id="ctt-name"></h4>
+        <p id="ctt-type"></p>
+        <div id="ctt-stats"></div>
+        <p id="ctt-desc"></p>
+      </div>
+
+      <!-- Inventory Panel -->
+      <div id="inventory-panel" class="parchment" style="display: none;">
+        <header>
+          <h3>Inventory</h3>
+          <button class="close-btn" id="close-inventory">X</button>
+        </header>
+        <div id="inventory-grid" class="item-grid"></div>
+        <div class="equipment-section">
+          <div class="equipment-column">
+            <div id="slot-helmet" class="equip-slot" title="Helmet" onclick="game.player.unequip('helmet', game)">🪖
+            </div>
+            <div id="slot-chestplate" class="equip-slot" title="Chestplate"
+              onclick="game.player.unequip('chestplate', game)">🛡️</div>
+          </div>
+          <div class="equipment-column">
+            <div id="slot-leggings" class="equip-slot" title="Leggings" onclick="game.player.unequip('leggings', game)">
+              👖</div>
+            <div id="slot-boots" class="equip-slot" title="Boots" onclick="game.player.unequip('boots', game)">🥾</div>
+          </div>
+          <div class="equipment-column">
+            <div id="slot-weapon" class="equip-slot" title="Weapon Slot" onclick="game.player.unequip('weapon', game)">
+              ⚔️</div>
+          </div>
+        </div>
+      </div>
+
+      <div id="interaction-panel" class="modal-panel parchment" style="display:none;">
+        <button id="close-interaction" class="close-btn">&times;</button>
+
+        <!-- Shop Interface -->
+        <div id="shop-ui" style="display:none;">
+          <h2 class="panel-header shop-header">💰 MERCHANDISE 💰</h2>
+          <div class="shop-info">
+            <span id="merchant-name">Master Merchant</span>
+            <div class="gold-balance">Your Gold: <span id="shop-gold-count">0</span></div>
+          </div>
+          <div id="shop-content" class="merchant-grid"></div>
+        </div>
+
+        <!-- Merchant Dialogue Interface -->
+        <div id="dialogue-ui" style="display:none;">
+          <h2 class="panel-header merchant-header">📜 A GRIM TALE 📜</h2>
+          <div class="dialogue-container parchment">
+            <p id="dialogue-text">"Welcome, seeker of relics..."</p>
+          </div>
+          <div class="dialogue-actions">
+            <button id="open-shop-btn" class="menu-btn stone-texture">VIEW MERCHANDISE</button>
+          </div>
+        </div>
+
+        <!-- Loot Interface -->
+        <div id="loot-ui" style="display:none;">
+          <h2 class="panel-header loot-header">📦 DUNGEON CACHE 📦</h2>
+          <div class="loot-info">Searching the remains...</div>
+          <div id="loot-content" class="grid-layout"></div>
+        </div>
+      </div>
+
+      <div id="game-menu" class="modal-panel parchment" style="display: none;">
+        <h2 class="panel-header">QUEST MENU</h2>
+        <div class="menu-content">
+          <button id="resume-btn" class="menu-btn stone-texture">RESUME QUEST</button>
+          <button id="main-menu-btn" class="menu-btn stone-texture">ABANDON TO MAIN MENU</button>
+        </div>
+      </div>
+
+      <div id="death-screen" style="display: none;">
+        <h1 class="death-title">YOU HAVE PERISHED</h1>
+        <p id="death-stats">Level 1 | XP: 0</p>
+        <button id="restart-btn" class="menu-btn stone-texture">RESTART ODYSSEY</button>
+      </div>
+    </div>
+  </div>
+  <script type="module" src="/src/main.ts"></script>
+</body>
+
+</html>

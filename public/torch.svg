@@ -1,0 +1,9 @@
+<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <path d="M50 10 L45 30 L55 30 Z" fill="#ff4500">
+    <animate attributeName="d" values="M50 10 L45 30 L55 30 Z; M50 5 L43 30 L57 30 Z; M50 10 L45 30 L55 30 Z" dur="0.2s" repeatCount="indefinite" />
+  </path>
+  <path d="M50 15 L47 30 L53 30 Z" fill="#ff8c00">
+    <animate attributeName="d" values="M50 15 L47 30 L53 30 Z; M50 10 L46 30 L54 30 Z; M50 15 L47 30 L53 30 Z" dur="0.3s" repeatCount="indefinite" />
+  </path>
+  <rect x="45" y="30" width="10" height="40" fill="#4a4a4a" />
+</svg>

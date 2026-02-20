@@ -1,0 +1,26 @@
+<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="boneShade" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
+      <stop offset="0%" style="stop-color:#f0e6d2;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#bdae91;stop-opacity:1" />
+    </radialGradient>
+  </defs>
+  <!-- Detailed Skull -->
+  <path d="M85 45 Q85 20 100 20 Q115 20 115 45 Q115 65 100 65 Q85 65 85 45" fill="url(#boneShade)" stroke="#8a7d63" stroke-width="1"/>
+  <circle cx="93" cy="48" r="4" fill="#111" /> <!-- Eye socket -->
+  <circle cx="107" cy="48" r="4" fill="#111" /> <!-- Eye socket -->
+  <path d="M98 55 L100 52 L102 55" fill="#111" /> <!-- Nose hole -->
+  <!-- Mandible -->
+  <path d="M90 65 L90 72 L110 72 L110 65" fill="url(#boneShade)" stroke="#8a7d63" stroke-width="1" />
+  
+  <!-- Ribs -->
+  <path d="M100 75 L100 130" stroke="#8a7d63" stroke-width="3" fill="none"/>
+  <path d="M85 85 Q100 80 115 85 M82 95 Q100 90 118 95 M80 105 Q100 100 120 105 M82 115 Q100 110 118 115" stroke="url(#boneShade)" stroke-width="4" fill="none" stroke-linecap="round"/>
+  
+  <!-- Arms & Legs in slumped position -->
+  <path d="M85 85 Q70 100 65 140 M115 85 Q130 100 135 140" stroke="url(#boneShade)" stroke-width="5" fill="none" stroke-linecap="round"/>
+  <path d="M90 130 Q70 140 60 180 M110 130 Q130 140 140 180" stroke="url(#boneShade)" stroke-width="6" fill="none" stroke-linecap="round"/>
+  
+  <!-- Pelvis -->
+  <path d="M85 130 Q100 120 115 130 L110 140 L90 140 Z" fill="url(#boneShade)" stroke="#8a7d63" stroke-width="1"/>
+</svg>
