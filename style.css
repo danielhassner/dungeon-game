@@ -35,6 +35,107 @@ body {
     position: relative;
 }
 
+/* Quest System Styles */
+.quest-log {
+    margin: 15px 0;
+    padding: 15px;
+    border: 2px solid #5d4037;
+    background: rgba(255, 235, 156, 0.1);
+    border-radius: 8px;
+    position: relative;
+    box-shadow: inset 0 0 15px rgba(0,0,0,0.2);
+}
+
+.quest-title {
+    margin: 0 0 10px 0;
+    font-family: 'Cinzel', serif;
+    color: #5d4037;
+    border-bottom: 2px solid #5d4037;
+    display: inline-block;
+    font-size: 1.1em;
+}
+
+.q-name {
+    display: block;
+    font-weight: bold;
+    color: #2c3e50;
+    font-size: 1.25em;
+    margin-bottom: 5px;
+}
+
+.q-desc {
+    font-style: italic;
+    color: #34495e;
+    font-size: 0.95em;
+    margin-bottom: 12px;
+}
+
+.quest-progress-container {
+    width: 100%;
+    height: 24px;
+    background: #ecf0f1;
+    border: 1px solid #bdc3c7;
+    border-radius: 12px;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 10px;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.quest-progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #f1c40f, #f39c12);
+    width: 0%;
+    transition: width 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.q-progress {
+    position: absolute;
+    width: 100%;
+    text-align: center;
+    line-height: 24px;
+    font-weight: bold;
+    color: #2c3e50;
+    text-shadow: 0 1px 0 rgba(255,255,255,0.5);
+    font-size: 0.85em;
+    top: 0;
+}
+
+.q-reward {
+    font-weight: bold;
+    color: #c0392b;
+    margin-bottom: 10px;
+    font-size: 1.1em;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.quest-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.quest-actions .menu-btn {
+    padding: 8px 15px;
+    font-size: 0.8em;
+}
+
+/* Quest View Tab Styles */
+#quest-tab-content .quest-log {
+    background: rgba(255, 235, 156, 0.05);
+    border: 3px solid #5d4037;
+    max-width: 600px;
+    margin: 40px auto;
+}
+
+.quest-tab-empty {
+    text-align: center;
+    font-family: 'Cinzel', serif;
+    font-size: 1.5em;
+    color: #5d4037;
+    margin-top: 100px;
+}
+
 /* UI Structure */
 #home-view {
     width: 100vw;
@@ -953,26 +1054,26 @@ body {
 }
 
 .skill-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-    gap: 20px;
-    overflow-y: auto;
+    position: relative;
+    overflow: auto;
     padding: 10px;
     flex-grow: 1;
+    min-width: 100%;
 }
 
 .skill-node {
-    background: rgba(0, 0, 0, 0.8);
-    border: 2px solid #444;
-    border-radius: 8px;
-    padding: 15px;
-    text-align: center;
+    width: 64px;
+    height: 64px;
+    background: rgba(0, 0, 0, 0.85);
+    border: 2px solid #555;
+    border-radius: 50%;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     display: flex;
-    flex-direction: column;
     align-items: center;
-    gap: 5px;
+    justify-content: center;
+    box-sizing: border-box;
+    font-size: 32px;
 }
 
 .skill-node .icon {
@@ -996,9 +1097,58 @@ body {
 }
 
 .skill-node.available {
-    border-color: #f39c12;
-    box-shadow: 0 0 10px rgba(243, 156, 18, 0.5);
+    border-color: var(--color-gold);
+    box-shadow: 0 0 15px rgba(197, 160, 89, 0.4);
     opacity: 1;
+}
+
+.skill-node.unlocked {
+    border-color: #2ecc71;
+    box-shadow: 0 0 15px rgba(46, 204, 113, 0.4);
+    opacity: 1;
+}
+
+.skill-node .node-tooltip {
+    position: absolute;
+    bottom: 120%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(15, 10, 5, 0.95);
+    border: 1px solid #5a3e1b;
+    padding: 10px;
+    width: 200px;
+    border-radius: 4px;
+    display: none;
+    z-index: 1000;
+    pointer-events: none;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+    text-align: left;
+    font-size: 0.9rem;
+}
+
+.skill-node:hover .node-tooltip {
+    display: block;
+}
+
+.node-name {
+    color: var(--color-gold);
+    font-family: 'Cinzel', serif;
+    font-weight: bold;
+    margin-bottom: 5px;
+    border-bottom: 1px solid #5a3e1b;
+}
+
+.node-desc {
+    color: var(--color-parchment);
+    font-size: 0.8rem;
+    margin-bottom: 10px;
+    line-height: 1.2;
+}
+
+.node-status {
+    font-weight: bold;
+    font-size: 0.75rem;
+    text-align: right;
 }
 
 /* --- Skill Tree Modal Styles --- */
@@ -1144,4 +1294,30 @@ body {
     stroke: var(--color-gold);
     stroke-width: 5;
     filter: drop-shadow(0 0 5px var(--color-gold));
+}
+/* --- HOTBAR PLACEHOLDERS --- */
+.empty-slot-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255, 255, 255, 0.2);
+    font-family: 'Inter', sans-serif;
+    font-weight: 900;
+    font-size: 20px;
+    background: rgba(0, 0, 0, 0.3) !important;
+    border-radius: 8px;
+    pointer-events: none;
+    text-shadow: 0 0 5px rgba(0,0,0,0.5);
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.hotbar-slot:hover .empty-slot-placeholder,
+.melee-slot:hover .empty-slot-placeholder {
+    color: rgba(255, 255, 255, 0.4);
+    background: rgba(255, 255, 255, 0.05) !important;
 }

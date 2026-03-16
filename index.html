@@ -159,10 +159,14 @@
         <div class="skill-tabs">
           <button class="menu-btn stone-texture active" id="tab-melee">Melee Tree</button>
           <button class="menu-btn stone-texture" id="tab-spell">Spell Tree</button>
+          <button class="menu-btn stone-texture" id="tab-quest-view">Active Quest</button>
           <div class="sp-counter">Skill Points: <span id="skill-points-display">0</span></div>
         </div>
         <div id="skill-tree-container" class="skill-grid">
           <svg id="skill-connections"></svg>
+          <!-- Skill Content -->
+        </div>
+        <div id="quest-tab-content" style="display:none; padding: 20px;">
           <!-- Populated dynamically -->
         </div>
       </div>
@@ -186,6 +190,25 @@
           <div class="dialogue-container parchment">
             <p id="dialogue-text">"Welcome, seeker of relics..."</p>
           </div>
+          
+          <!-- Quest UI Section -->
+          <div id="quest-ui" class="quest-log parchment">
+            <h4 class="quest-title">CURRENT QUEST</h4>
+            <div class="quest-details">
+              <span id="quest-name" class="q-name">Loading...</span>
+              <p id="quest-description" class="q-desc">Quest information here.</p>
+              <div class="quest-progress-container">
+                <div id="quest-progress-bar" class="quest-progress-bar"></div>
+                <span id="quest-progress-text" class="q-progress">0/0</span>
+              </div>
+              <div id="quest-reward" class="q-reward">Reward: 1 SP</div>
+            </div>
+            <div class="quest-actions">
+              <button id="claim-quest-reward-btn" class="menu-btn stone-texture" style="display:none;">CLAIM REWARD</button>
+              <button id="reroll-quest-btn" class="menu-btn stone-texture">REROLL (100G)</button>
+            </div>
+          </div>
+
           <div class="dialogue-actions">
             <button id="open-shop-btn" class="menu-btn stone-texture">VIEW MERCHANDISE</button>
           </div>

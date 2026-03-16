@@ -107,14 +107,25 @@ interface MeleeAbility {
 }
 
 const MELEE_ABILITY_DB: Record<string, MeleeAbility> = {
+    'basic_attack': { id: 'basic_attack', name: 'Basic Training', icon: '⚔️', desc: 'Core combat conditioning.', cooldown: 0.1, damage: 0, color: '#fff', range: 0 },
+    'quick_strike': { id: 'quick_strike', name: 'Quick Strike', icon: '⚡', desc: 'A rapid flurry of light blows.', cooldown: 3, damage: 35, color: '#f5f6fa', range: 130 },
+    'rend': { id: 'rend', name: 'Rend', icon: '🩸', desc: 'A cruel slash that causes persistent bleeding.', cooldown: 6, damage: 40, color: '#c0392b', range: 120 },
+    'bloodbath': { id: 'bloodbath', name: 'Bloodbath', icon: '🍷', desc: 'Heal from the blood of your enemies.', cooldown: 15, damage: 0, color: '#c0392b', range: 200 },
+    'heavy_slam': { id: 'heavy_slam', name: 'Heavy Slam', icon: '🔨', desc: 'Smash the ground with incredible force.', cooldown: 8, damage: 90, color: '#8d6e63', range: 150 },
+    'earthshaker': { id: 'earthshaker', name: 'Earthshaker', icon: '🌋', desc: 'Stun all nearby enemies with a massive stomp.', cooldown: 12, damage: 60, color: '#7f8c8d', range: 250 },
+    'shockwave': { id: 'shockwave', name: 'Shockwave', icon: '🌊', desc: 'Release a powerful ring of force pushing foes back.', cooldown: 18, damage: 45, color: '#dcdde1', range: 350 },
+    'sweep': { id: 'sweep', name: 'Sweeping Strike', icon: '🧹', desc: 'A wide arc that hits all foes in front of you.', cooldown: 4, damage: 50, color: '#d1d8e0', range: 180 },
+    'whirlwind': { id: 'whirlwind', name: 'Whirlwind', icon: '🌪️', desc: 'Spin in a deadly circle, damaging all adjacent enemies.', cooldown: 7, damage: 60, color: '#f5f6fa', range: 160 },
+    'bladestorm': { id: 'bladestorm', name: 'Bladestorm', icon: '🌀', desc: 'An unstoppable torrent of steel.', cooldown: 25, damage: 120, color: '#fff', range: 200 },
+    'shield_bash': { id: 'shield_bash', name: 'Shield Bash', icon: '🛡️', desc: 'Daze and knock back enemies with your shield.', cooldown: 5, damage: 30, color: '#95afc0', range: 120 },
+    'parry': { id: 'parry', name: 'Parry', icon: '🤺', desc: 'Adopt a defensive stance to counter upcoming attacks.', cooldown: 10, damage: 0, color: '#f1c40f', range: 100 },
+    'fortress': { id: 'fortress', name: 'Fortress', icon: '🏰', desc: 'Become an immovable object, immune to damage.', cooldown: 40, damage: 0, color: '#95afc0', range: 0 },
+    // Legacy support
     'dash_strike': { id: 'dash_strike', name: 'Dash Strike', icon: '💨', desc: 'Dash forward, damaging enemies in your path.', cooldown: 4, damage: 45, color: '#f5f6fa', range: 300 },
     'ground_stomp': { id: 'ground_stomp', name: 'Ground Stomp', icon: '🦶', desc: 'Stomp the ground, stunning nearby enemies.', cooldown: 6, damage: 30, color: '#8d6e63', range: 200, effect: 'petrify' },
     'bleed_slash': { id: 'bleed_slash', name: 'Bleed Slash', icon: '🩸', desc: 'A heavy strike that causes enemies to bleed.', cooldown: 5, damage: 60, color: '#c0392b', range: 120, effect: 'poison' },
-    'whirlwind': { id: 'whirlwind', name: 'Whirlwind', icon: '🌪️', desc: 'Spin in a circle, hitting all adjacent enemies.', cooldown: 8, damage: 50, color: '#dcdde1', range: 150 },
-    'shield_bash': { id: 'shield_bash', name: 'Shield Bash', icon: '🛡️', desc: 'Bash with your shield, knocking enemies back.', cooldown: 5, damage: 25, color: '#95afc0', range: 100, effect: 'knockback' },
     'leap_strike': { id: 'leap_strike', name: 'Leaping Strike', icon: '🦘', desc: 'Jump to a location and deal AOE damage on landing.', cooldown: 10, damage: 70, color: '#f39c12', range: 400 },
     'execute': { id: 'execute', name: 'Execute', icon: '❌', desc: 'Deal massive damage to enemies below 30% health.', cooldown: 12, damage: 150, color: '#e84118', range: 120 },
-    'parry': { id: 'parry', name: 'Parry', icon: '🛡️', desc: 'Deflect incoming attacks for 1s. Counter-attack for 3x damage.', cooldown: 8, damage: 0, color: '#f1c40f', range: 80 },
     'war_cry': { id: 'war_cry', name: 'War Cry', icon: '🗣️', desc: 'Buff yourself with +50% damage and fear nearby enemies.', cooldown: 15, damage: 0, color: '#e67e22', range: 250, effect: 'fear' },
     'hamstring': { id: 'hamstring', name: 'Hamstring', icon: '⛓️', desc: 'Slash their legs, slowing them by 60%.', cooldown: 5, damage: 40, color: '#2f3640', range: 120, effect: 'slow' },
     'cleave': { id: 'cleave', name: 'Cleave', icon: '🪓', desc: 'A wide frontal arc that hits multiple enemies.', cooldown: 4, damage: 45, color: '#d1d8e0', range: 160 }
@@ -125,6 +136,25 @@ interface SkillNode {
     type: 'melee' | 'spell'; cost: number; requires: string[];
     gridPos: { x: number, y: number };
 }
+
+interface Quest {
+    id: string; name: string; desc: string; type: 'kill' | 'depth' | 'gold' | 'loot' | 'spell' | 'melee';
+    target: number; progress: number; reward: number; // skill points
+    targetId?: string; // e.g., 'skeleton' or 'fireball'
+    completed: boolean;
+}
+
+const QUEST_POOL: Omit<Quest, 'progress' | 'completed'>[] = [
+    { id: 'slay_skeletons', name: 'Bones to Dust', desc: 'Slay # skeletons in the dark.', type: 'kill', target: 5, targetId: 'skeleton', reward: 1 },
+    { id: 'slay_ogres', name: 'Ogre Hunter', desc: 'Slay # ogres to thin the herd.', type: 'kill', target: 3, targetId: 'ogre', reward: 2 },
+    { id: 'slay_slimes', name: 'Slime Control', desc: 'Slay # slimes oozing in the halls.', type: 'kill', target: 8, targetId: 'slime', reward: 1 },
+    { id: 'slay_lich', name: 'Bane of the Undead', desc: 'Defeat a powerful Lich.', type: 'kill', target: 1, targetId: 'lich', reward: 3 },
+    { id: 'reach_depth', name: 'Deep Diver', desc: 'Reach depth # of the dungeon.', type: 'depth', target: 5, reward: 2 },
+    { id: 'amass_gold', name: 'Greed is Good', desc: 'Collect # gold coins.', type: 'gold', target: 500, reward: 1 },
+    { id: 'loot_chests', name: 'Treasure Hunter', desc: 'Open # dungeon caches.', type: 'loot', target: 3, reward: 1 },
+    { id: 'cast_spells', name: 'Arcane Mastery', desc: 'Cast spells # times.', type: 'spell', target: 20, reward: 1 },
+    { id: 'melee_kills', name: 'Warrior Path', desc: 'Defeat # foes with melee only.', type: 'melee', target: 5, reward: 2 }
+];
 
 const MELEE_SKILL_TREE: Record<string, SkillNode> = {
     'basic_attack': { id: 'basic_attack', name: 'Basic Attack', desc: 'Core combat training. Center root.', icon: '⚔️', type: 'melee', cost: 0, requires: [], gridPos: { x: 3, y: 1 } },
@@ -1109,6 +1139,7 @@ class Player {
     parryTimer: number = 0;
     warCryTimer: number = 0;
     skillPoints: number = 0;
+    activeQuest: Quest | null = null;
     unlockedSkills: Set<string> = new Set(['basic_attack']);
     meleeSlots: { [key: string]: string | null } = { 'KeyQ': null, 'KeyF': null, 'KeyR': null, 'KeyV': null };
     meleeCooldowns: { [key: string]: number } = {};
@@ -1127,6 +1158,7 @@ class Player {
         const it = this.inventory[idx]; if (!it) return;
         if (it.id === 'gold_pile') {
             this.gold += it.value;
+            game.trackQuestProgress('gold', undefined, it.value);
             this.inventory[idx] = null;
             game.log(`Collected ${it.value} gold!`);
         }
@@ -1366,7 +1398,127 @@ class Player {
         const m = input.mousePosWorld;
         const angleToMouse = Math.atan2(m.y - this.y, m.x - this.x);
 
-        if (id === 'dash_strike') {
+        if (id === 'quick_strike') {
+            this.swingTime = 0.15; // Rapid swing
+            this.swingAngle = angleToMouse;
+            level.entities.forEach(e => {
+                if (e.type === 'enemy' && !e.dead && Math.hypot(this.x - e.x, this.y - e.y) < a.range) {
+                    let diff = Math.abs(Math.atan2(e.y - this.y, e.x - this.x) - angleToMouse);
+                    if (diff > Math.PI) diff = 2 * Math.PI - diff;
+                    if (diff < 0.8) {
+                        e.hp -= a.damage + this.level * 2;
+                        game.particles.push({ x: e.x, y: e.y, life: 0.2, type: 'spark', color: a.color });
+                        if (e.hp <= 0) game.killEnemy(e);
+                    }
+                }
+            });
+            game.log("Quick Strike!");
+        }
+        else if (id === 'rend') {
+            this.swingTime = 0.3;
+            this.swingAngle = angleToMouse;
+            level.entities.forEach(e => {
+                if (e.type === 'enemy' && !e.dead && Math.hypot(this.x - e.x, this.y - e.y) < a.range) {
+                    let diff = Math.abs(Math.atan2(e.y - this.y, e.x - this.x) - angleToMouse);
+                    if (diff > Math.PI) diff = 2 * Math.PI - diff;
+                    if (diff < 0.8) {
+                        e.hp -= a.damage;
+                        e.poisonTimer = 6; // Bleed effect
+                        e.poisonDamage = 15;
+                        game.particles.push({ x: e.x, y: e.y, life: 0.4, type: 'spark', color: a.color });
+                        if (e.hp <= 0) game.killEnemy(e);
+                    }
+                }
+            });
+            game.log("Rend!");
+        }
+        else if (id === 'bloodbath') {
+            game.particles.push({ x: this.x, y: this.y, life: 1.0, type: 'explosion', color: '#c0392b' });
+            level.entities.forEach(e => {
+                if (e.type === 'enemy' && !e.dead && Math.hypot(this.x - e.x, this.y - e.y) < a.range) {
+                    e.hp -= 30; // Direct damage
+                    const heal = 15;
+                    this.hp = Math.min(this.maxHp, this.hp + heal);
+                    game.particles.push({ x: this.x, y: this.y, life: 0.5, type: 'spark', color: '#2ecc71' });
+                    if (e.hp <= 0) game.killEnemy(e);
+                }
+            });
+            game.log("Bloodbath! Healing initiated.");
+        }
+        else if (id === 'heavy_slam') {
+            this.swingTime = 0.4;
+            this.swingAngle = angleToMouse;
+            game.particles.push({ x: this.x + Math.cos(angleToMouse) * 100, y: this.y + Math.sin(angleToMouse) * 100, life: 0.6, type: 'shockwave', color: a.color });
+            level.entities.forEach(e => {
+                if (e.type === 'enemy' && !e.dead && Math.hypot(this.x + Math.cos(angleToMouse) * 100 - e.x, this.y + Math.sin(angleToMouse) * 100 - e.y) < a.range) {
+                    e.hp -= a.damage;
+                    const ka = Math.atan2(e.y - this.y, e.x - this.x);
+                    e.x += Math.cos(ka) * 100; e.y += Math.sin(ka) * 100;
+                    if (e.hp <= 0) game.killEnemy(e);
+                }
+            });
+            game.log("Heavy Slam!");
+        }
+        else if (id === 'earthshaker') {
+            game.particles.push({ x: this.x, y: this.y, life: 0.8, type: 'star_fissure', color: a.color });
+            level.entities.forEach(e => {
+                if (e.type === 'enemy' && !e.dead && Math.hypot(this.x - e.x, this.y - e.y) < a.range) {
+                    e.hp -= a.damage;
+                    e.petrifiedTimer = 3; // Long stun
+                    if (e.hp <= 0) game.killEnemy(e);
+                }
+            });
+            game.log("EARTHSHAKER!");
+        }
+        else if (id === 'shockwave') {
+            game.particles.push({ x: this.x, y: this.y, life: 0.5, type: 'explosion', color: a.color });
+            level.entities.forEach(e => {
+                if (e.type === 'enemy' && !e.dead && Math.hypot(this.x - e.x, this.y - e.y) < a.range) {
+                    e.hp -= a.damage;
+                    const ka = Math.atan2(e.y - this.y, e.x - this.x);
+                    e.x += Math.cos(ka) * 400; e.y += Math.sin(ka) * 400;
+                    if (e.hp <= 0) game.killEnemy(e);
+                }
+            });
+            game.log("Shockwave!");
+        }
+        else if (id === 'sweep') {
+            this.swingTime = 0.3;
+            this.swingAngle = angleToMouse;
+            game.particles.push({ x: this.x, y: this.y, life: 0.4, type: 'cone', color: a.color, angle: angleToMouse });
+            level.entities.forEach(e => {
+                if (e.type === 'enemy' && !e.dead && Math.hypot(this.x - e.x, this.y - e.y) < a.range) {
+                    let diff = Math.abs(Math.atan2(e.y - this.y, e.x - this.x) - angleToMouse);
+                    if (diff > Math.PI) diff = 2 * Math.PI - diff;
+                    if (diff < 1.2) {
+                        e.hp -= a.damage;
+                        if (e.hp <= 0) game.killEnemy(e);
+                    }
+                }
+            });
+            game.log("Sweeping Strike!");
+        }
+        else if (id === 'bladestorm') {
+            this.swingTime = 1.0;
+            const interval = setInterval(() => {
+                if (!this.swingTime || this.swingTime <= 0) { clearInterval(interval); return; }
+                this.swingAngle += 0.5;
+                game.particles.push({ x: this.x, y: this.y, life: 0.2, type: 'spark', color: '#fff' });
+                level.entities.forEach(e => {
+                    if (e.type === 'enemy' && !e.dead && Math.hypot(this.x - e.x, this.y - e.y) < a.range) {
+                        e.hp -= 20;
+                        if (e.hp <= 0) game.killEnemy(e);
+                    }
+                });
+            }, 100);
+            game.log("Bladestorm unleashed!");
+        }
+        else if (id === 'fortress') {
+            this.etherealTimer = 4.0; // Reuse ethereal for invulnerability
+            game.log("FORTRESS! Damage immunity active.");
+            game.particles.push({ x: this.x, y: this.y, life: 1.0, type: 'shockwave', color: a.color });
+        }
+        else if (id === 'dash_strike') {
             const dist = a.range;
             let targetX = this.x; let targetY = this.y;
             // Raycast dash to stop at walls
@@ -1593,6 +1745,7 @@ export class Game {
         (window as any).game = this; // Set before level generation to allow depth tracking
         this.goToLevel(1, true);
         this.player = new Player(this.level.spawnX, this.level.spawnY);
+        this.generateQuest(); // Initial quest
         if (this.isSandbox) {
             this.player.gold = 999999;
             this.player.skillPoints = 99;
@@ -1604,6 +1757,7 @@ export class Game {
         const empty = this.player.hotbar.indexOf(null);
         if (empty !== -1) this.player.hotbar[empty] = 'ignite';
         
+        this.generateQuest(); // Initial quest
         this.setupUI();
         window.addEventListener('resize', () => {
             this.canvas.width = window.innerWidth;
@@ -1620,9 +1774,9 @@ export class Game {
         window.addEventListener('keydown', e => {
             if (e.key === 'Escape') {
                 let closed = false;
-                if (document.getElementById('inventory-panel')?.style.display === 'block') { this.toggleInventory(false); closed = true; }
-                if (document.getElementById('interaction-panel')?.style.display === 'block') { this.closeInteraction(); closed = true; }
-                if (document.getElementById('skill-tree-panel')?.style.display === 'block') { this.toggleSkillTree(false); closed = true; }
+                if (document.getElementById('inventory-panel')?.style.display !== 'none') { this.toggleInventory(false); closed = true; }
+                if (document.getElementById('interaction-panel')?.style.display !== 'none') { this.closeInteraction(); closed = true; }
+                if (document.getElementById('skill-tree-panel')?.style.display !== 'none') { this.toggleSkillTree(false); closed = true; }
 
                 if (!closed) { this.toggleGameMenu(); }
                 else if (document.getElementById('game-menu')?.style.display === 'block') { this.toggleGameMenu(false); }
@@ -1644,37 +1798,79 @@ export class Game {
         document.getElementById('close-skill-tree')?.addEventListener('click', () => this.toggleSkillTree(false));
         document.getElementById('restart-btn')?.addEventListener('click', () => location.reload());
         
-        document.getElementById('tab-melee')?.addEventListener('click', () => this.renderSkillTree('melee'));
-        document.getElementById('tab-spell')?.addEventListener('click', () => this.renderSkillTree('spell'));
+        document.getElementById('tab-melee')?.addEventListener('click', () => this.switchSkillTab('melee'));
+        document.getElementById('tab-spell')?.addEventListener('click', () => this.switchSkillTab('spell'));
+        document.getElementById('tab-quest-view')?.addEventListener('click', () => this.switchSkillTab('quest'));
     }
     toggleSkillTree(show?: boolean) {
         const p = document.getElementById('skill-tree-panel')!;
         const isShowing = show !== undefined ? show : p.style.display === 'none';
         p.style.display = isShowing ? 'flex' : 'none';
         this.isPaused = isShowing;
-        if (isShowing) this.renderSkillTree('melee');
+        if (isShowing) this.switchSkillTab('melee');
+    }
+    switchSkillTab(tab: 'melee' | 'spell' | 'quest') {
+        document.getElementById('tab-melee')?.classList.toggle('active', tab === 'melee');
+        document.getElementById('tab-spell')?.classList.toggle('active', tab === 'spell');
+        document.getElementById('tab-quest-view')?.classList.toggle('active', tab === 'quest');
+        
+        const skillCont = document.getElementById('skill-tree-container')!;
+        const questCont = document.getElementById('quest-tab-content')!;
+        
+        if (tab === 'quest') {
+            skillCont.style.display = 'none';
+            questCont.style.display = 'block';
+            this.renderQuestTab();
+        } else {
+            skillCont.style.display = 'block';
+            questCont.style.display = 'none';
+            this.renderSkillTree(tab as 'melee' | 'spell');
+        }
+    }
+    renderQuestInSkillTree() { // Helper name from user request intent
+        this.renderQuestTab();
+    }
+    renderQuestTab() {
+        const cont = document.getElementById('quest-tab-content')!;
+        const q = this.player.activeQuest;
+        
+        if (!q) {
+            cont.innerHTML = '<div class="quest-tab-empty">No active quest. Visit a merchant to begin!</div>';
+            return;
+        }
+        
+        cont.innerHTML = `
+            <div class="quest-log parchment">
+                <h4 class="quest-title">ACTIVE OBJECTIVE</h4>
+                <div class="quest-details">
+                    <span class="q-name">${q.name}</span>
+                    <p class="q-desc">${q.desc}</p>
+                    <div class="quest-progress-container">
+                        <div class="quest-progress-bar" style="width: ${(q.progress / q.target) * 100}%"></div>
+                        <span class="q-progress">${Math.floor(q.progress)} / ${q.target}</span>
+                    </div>
+                    <div class="q-reward">Potential Reward: ${q.reward} Skill Points</div>
+                </div>
+            </div>
+        `;
     }
     renderSkillTree(type: 'melee' | 'spell') {
         const panel = document.getElementById('skill-tree-panel')!;
-        document.getElementById('tab-melee')?.classList.toggle('active', type === 'melee');
-        document.getElementById('tab-spell')?.classList.toggle('active', type === 'spell');
         document.getElementById('skill-points-display')!.innerText = this.player.skillPoints.toString();
         
         const container = document.getElementById('skill-tree-container')!;
-        container.innerHTML = '<svg id="skill-connections"></svg>'; // Clear old content area and nodes
+        container.innerHTML = '<svg id="skill-connections"></svg>';
         const svg = document.getElementById('skill-connections') as unknown as SVGSVGElement;
         
         const tree = type === 'melee' ? MELEE_SKILL_TREE : SPELL_SKILL_TREE;
         
-        // 1. Precise Layout Parameters
-        const cellWidth = 120;
+        const cellWidth = 140; // Increased spacing for clarity
         const cellHeight = 160;
-        const paddingLeft = 50;
-        const paddingTop = 50;
+        const paddingLeft = 60;
+        const paddingTop = 60;
         const nodeSize = 64;
         const halfNode = nodeSize / 2;
         
-        // 2. Calculate dynamic bounds
         let maxX = 0; let maxY = 0;
         Object.values(tree).forEach(n => {
             maxX = Math.max(maxX, n.gridPos.x);
@@ -1684,20 +1880,18 @@ export class Game {
         const contentWidth = maxX * cellWidth + paddingLeft * 2;
         const contentHeight = maxY * cellHeight + paddingTop * 2;
         
-        // Force container to be able to scroll and SVG to match
         container.style.width = '100%';
         container.style.height = '100%';
         container.style.position = 'relative';
         container.style.overflow = 'auto';
         
-        // Inner dimensions of the scroll area
         const contentArea = document.createElement('div');
         contentArea.style.width = `${contentWidth}px`;
         contentArea.style.height = `${contentHeight}px`;
         contentArea.style.position = 'absolute';
         contentArea.style.top = '0';
         contentArea.style.left = '50%';
-        contentArea.style.transform = 'translateX(-50%)'; // Center horizontally
+        contentArea.style.transform = 'translateX(-50%)';
         contentArea.className = 'skill-content-area';
         container.appendChild(contentArea);
         
@@ -1709,7 +1903,6 @@ export class Game {
         svg.style.zIndex = '1';
         contentArea.appendChild(svg);
         
-        // 3. Draw connections
         Object.values(tree).forEach(node => {
             node.requires.forEach(reqId => {
                 const parent = tree[reqId];
@@ -1724,13 +1917,12 @@ export class Game {
                     line.setAttribute("y1", startY.toString());
                     line.setAttribute("x2", endX.toString());
                     line.setAttribute("y2", endY.toString());
-                    line.setAttribute("class", `skill-line ${this.player.unlockedSkills.has(node.id) ? 'active' : ''}`);
+                    line.setAttribute("class", `skill-line ${this.player.unlockedSkills.has(reqId) && this.player.unlockedSkills.has(node.id) ? 'active' : ''}`);
                     svg.appendChild(line);
                 }
             });
         });
 
-        // 4. Render Nodes on top of SVG
         Object.values(tree).forEach(node => {
             const el = document.createElement('div');
             const isUnlocked = this.player.unlockedSkills.has(node.id);
@@ -1740,22 +1932,18 @@ export class Game {
             el.style.position = 'absolute';
             el.style.left = `${(node.gridPos.x - 1) * cellWidth + paddingLeft}px`;
             el.style.top = `${(node.gridPos.y - 1) * cellHeight + paddingTop}px`;
-            el.style.zIndex = '10'; // Above SVG
             
             el.innerHTML = `
-                ${node.icon}
+                <span class="node-icon">${node.icon}</span>
                 <div class="node-tooltip">
-                    <strong>${node.name}</strong><br>
-                    ${node.desc}
-                    <span class="node-cost">${isUnlocked ? 'UNLOCKED' : `Cost: ${node.cost} SP`}</span>
+                    <div class="node-name">${node.name}</div>
+                    <div class="node-desc">${node.desc}</div>
+                    <div class="node-status">${isUnlocked ? 'UNLOCKED' : `Cost: ${node.cost} SP`}</div>
                 </div>
             `;
             
             if (canUnlock) {
-                el.onclick = (e) => {
-                    e.stopPropagation();
-                    this.player.unlockSkill(node.id, type, this);
-                }
+                el.onclick = () => this.player.unlockSkill(node.id, type, this);
             }
             
             contentArea.appendChild(el);
@@ -2057,6 +2245,7 @@ export class Game {
             }, 10000);
         }
         this.log(`Casting ${s.name}`);
+        this.trackQuestProgress('spell', s.id);
         this.player.cooldowns[sId] = s.cooldown; this.bufferedSpellSlot = null;
     }
     toggleInventory(s?: boolean) {
@@ -2186,6 +2375,19 @@ export class Game {
                 this.toggleInventory(true); // Open inventory with shop
                 this.renderShop(e);
             };
+            
+            this.renderQuestUI();
+            
+            document.getElementById('reroll-quest-btn')!.onclick = () => {
+                this.rerollQuest();
+                this.renderQuestUI();
+            };
+            
+            document.getElementById('claim-quest-reward-btn')!.onclick = () => {
+                this.claimQuestReward();
+                this.renderQuestUI();
+            };
+            
             return;
         }
 
@@ -2204,6 +2406,7 @@ export class Game {
                 sl.onclick = () => {
                     if (it.id === 'gold_pile') {
                         this.player.gold += it.value;
+                        this.trackQuestProgress('gold', undefined, it.value);
                         e.inventory.splice(idx, 1);
                         this.hideTT();
                         this.openInteraction(e);
@@ -2256,12 +2459,15 @@ export class Game {
     closeInteraction() { document.getElementById('interaction-panel')!.style.display = 'none'; this.activeInteractingEntity = null; this.toggleInventory(false); }
     log(m: string) { this.messageLog.unshift(m); if (this.messageLog.length > 10) this.messageLog.pop(); document.getElementById('log-content')!.innerHTML = this.messageLog.join('<br>'); }
     damageTarget(target: any, source: any, dmg: number) {
-        if (target === this.player && this.player.parryTimer > 0) {
-            source.hp -= dmg * 3;
-            this.particles.push({x: source.x, y: source.y, life: 0.4, type: 'shield_burst', color: '#f1c40f'});
-            this.log("Parried! Counter-attack!");
-            if (source.hp <= 0 && source.type === 'enemy') this.killEnemy(source);
-            return;
+        if (target === this.player) {
+            if (this.player.etherealTimer > 0) return; // Fortress/Ethereal Immunity
+            if (this.player.parryTimer > 0) {
+                source.hp -= dmg * 3;
+                this.particles.push({x: source.x, y: source.y, life: 0.4, type: 'shield_burst', color: '#f1c40f'});
+                this.log("Parried! Counter-attack!");
+                if (source.hp <= 0 && source.type === 'enemy') this.killEnemy(source);
+                return;
+            }
         }
         target.hp -= dmg;
         if (target !== this.player && target.hp <= 0) {
@@ -2310,9 +2516,100 @@ export class Game {
         });
 
         this.level.entities.push({ x: e.x, y: e.y, type: 'chest', isCorpse: true, inventory: loot, dead: false });
+        
+        // --- QUEST TRACKING: Kill ---
+        this.trackQuestProgress('kill', e.enemyType?.toLowerCase());
+        this.trackQuestProgress('melee'); // Generic kill tracking if we want to distinguish melee later
+    }
+
+    generateQuest() {
+        const pool = QUEST_POOL;
+        const template = pool[Math.floor(Math.random() * pool.length)];
+        const scale = 1 + Math.floor(this.currentDepth / 3);
+        
+        const quest: Quest = {
+            ...template,
+            target: template.target * scale,
+            progress: 0,
+            completed: false,
+            reward: template.reward * scale
+        };
+        
+        // Resolve description placeholders
+        quest.desc = quest.desc.replace('#', quest.target.toString());
+        if (quest.targetId) quest.desc = quest.desc.replace('#node', quest.targetId);
+        
+        this.player.activeQuest = quest;
+        this.log(`New Quest: ${quest.name}`);
+    }
+
+    trackQuestProgress(type: Quest['type'], targetId?: string, amount: number = 1) {
+        if (!this.player) return; // Prevent crash during early initialization
+        const q = this.player.activeQuest;
+        if (!q || q.completed || q.type !== type) return;
+        
+        if (q.targetId && q.targetId !== targetId) return;
+        
+        q.progress += amount;
+        if (q.progress >= q.target) {
+            q.progress = q.target;
+            q.completed = true;
+            this.log(`Quest Complete: ${q.name}! Visit a merchant for your reward.`);
+            this.particles.push({ x: this.player.x, y: this.player.y, life: 1, type: 'spark', color: '#f1c40f' });
+        }
+    }
+
+    claimQuestReward() {
+        const q = this.player.activeQuest;
+        if (!q || !q.completed) return;
+        
+        this.player.skillPoints += q.reward;
+        this.log(`Claimed ${q.reward} Skill Points!`);
+        this.player.activeQuest = null;
+        this.generateQuest(); // Auto-assign next quest
+    }
+
+    rerollQuest() {
+        const cost = 100 * this.currentDepth;
+        if (this.player.gold < cost) { this.log("Not enough gold to reroll quest!"); return; }
+        this.player.gold -= cost;
+        this.generateQuest();
+        this.log("Quest rerolled.");
+    }
+
+    renderQuestUI() {
+        const q = this.player.activeQuest;
+        if (!q) return;
+
+        document.getElementById('quest-name')!.innerText = q.name;
+        document.getElementById('quest-description')!.innerText = q.desc;
+        
+        const prog = (q.progress / q.target) * 100;
+        document.getElementById('quest-progress-bar')!.style.width = `${prog}%`;
+        document.getElementById('quest-progress-text')!.innerText = `${Math.floor(q.progress)} / ${q.target}`;
+        
+        document.getElementById('quest-reward')!.innerText = `Reward: ${q.reward} SP`;
+        
+        const claimBtn = document.getElementById('claim-quest-reward-btn')!;
+        const rerollBtn = document.getElementById('reroll-quest-btn')!;
+        
+        if (q.completed) {
+            claimBtn.style.display = 'block';
+            rerollBtn.style.display = 'none';
+        } else {
+            claimBtn.style.display = 'none';
+            rerollBtn.style.display = 'block';
+            rerollBtn.innerText = `REROLL (${100 * this.currentDepth}G)`;
+        }
     }
     goToLevel(d: number, down: boolean) {
-        this.currentDepth = d; if (!this.levels.has(d)) this.levels.set(d, new Level(40 + d * 2, 40 + d * 2, d)); this.level = this.levels.get(d)!; this.projectiles = []; this.log(`Floor ${d}...`);
+        if (d < 1) return;
+        this.currentDepth = d;
+        this.trackQuestProgress('depth', undefined, d);
+        if (!this.levels.has(d)) this.levels.set(d, new Level(40 + d * 2, 40 + d * 2, d)); 
+        this.level = this.levels.get(d)!; 
+        this.projectiles = []; 
+        this.log(`Floor ${d}...`);
 
         if (this.isSandbox && d === 1) {
             this.level.spawnGodMerchant();
@@ -2436,27 +2733,33 @@ export class Game {
         });
         for (let i = 0; i < 8; i++) {
             const sl = document.querySelectorAll('.hotbar-slot')[i] as HTMLElement, sId = p.hotbar[i];
-            if (sId) {
+            if (sId && SPELL_DB[sId]) {
                 const s = SPELL_DB[sId];
                 sl.innerHTML = `<img src="${s.image}" class="item-icon" onerror="this.outerHTML='<span class=%22item-icon%22 style=%22font-size:32px;display:flex;align-items:center;justify-content:center;height:100%%22>${s.icon}</span>';">`;
                 sl.style.opacity = p.cooldowns[sId] > 0 ? '0.4' : '1';
                 sl.onmouseenter = ev => this.showSpellTT(s, ev.clientX, ev.clientY);
                 sl.onmouseleave = () => this.hideTT();
-            } else { sl.innerText = ''; sl.onmouseenter = null; }
+            } else { 
+                sl.innerHTML = `<div class="empty-slot-placeholder">${i + 1}</div>`; 
+                sl.style.opacity = '1';
+                sl.onmouseenter = null; 
+            }
         }
         // Update Melee Hotbar
         ['KeyQ', 'KeyF', 'KeyR', 'KeyV'].forEach((k, i) => {
             const sl = document.getElementById(`melee-slot-${i}`)!;
             if (!sl) return;
             const aId = p.meleeSlots[k];
-            if (aId) {
+            const keys = ['Q', 'F', 'R', 'V'];
+            if (aId && MELEE_ABILITY_DB[aId]) {
                 const a = MELEE_ABILITY_DB[aId];
-                sl.innerHTML = `<span class="item-icon">${a.icon}</span>`;
+                sl.innerHTML = `<img src="/abilities/${aId}.png" class="item-icon" onerror="this.outerHTML='<span class=%22item-icon%22 style=%22font-size:32px;display:flex;align-items:center;justify-content:center;height:100%%22>${a.icon}</span>';">`;
                 sl.style.opacity = p.meleeCooldowns[aId] > 0 ? '0.4' : '1';
                 sl.onmouseenter = ev => this.showMeleeTT(a, ev.clientX, ev.clientY);
                 sl.onmouseleave = () => this.hideTT();
             } else {
-                sl.innerHTML = '';
+                sl.innerHTML = `<div class="empty-slot-placeholder">${keys[i]}</div>`;
+                sl.style.opacity = '1';
                 sl.onmouseenter = null;
             }
         });
