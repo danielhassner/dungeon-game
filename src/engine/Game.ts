@@ -1750,6 +1750,7 @@ export class Game {
             this.player.gold = 999999;
             this.player.skillPoints = 99;
             this.log("SANDBOX MODE ACTIVE: Infinite items, free shopping, and 99 SP!");
+            this.level.spawnGodMerchant();
         }
         // Unlock first spell tree node if not already
         this.player.unlockedSkills.add('ignite'); 
@@ -1933,14 +1934,10 @@ export class Game {
             el.style.left = `${(node.gridPos.x - 1) * cellWidth + paddingLeft}px`;
             el.style.top = `${(node.gridPos.y - 1) * cellHeight + paddingTop}px`;
             
-            el.innerHTML = `
-                <span class="node-icon">${node.icon}</span>
-                <div class="node-tooltip">
-                    <div class="node-name">${node.name}</div>
-                    <div class="node-desc">${node.desc}</div>
-                    <div class="node-status">${isUnlocked ? 'UNLOCKED' : `Cost: ${node.cost} SP`}</div>
-                </div>
-            `;
+            el.innerHTML = `<span class="node-icon">${node.icon}</span>`;
+            
+            el.onmouseenter = (ev) => this.showSkillTT(node, ev.clientX, ev.clientY);
+            el.onmouseleave = () => this.hideTT();
             
             if (canUnlock) {
                 el.onclick = () => this.player.unlockSkill(node.id, type, this);
@@ -2307,8 +2304,17 @@ export class Game {
     }
     showTT(it: Item, x: number, y: number) {
         const tt = document.getElementById('game-tooltip')!; tt.style.display = 'block';
-        const realX = Math.min(x, window.innerWidth - 320);
-        let realY = y; if (realY + 280 > window.innerHeight) realY = window.innerHeight - 280;
+        const offsetX = 20;
+        const offsetY = 20;
+        let realX = x + offsetX;
+        let realY = y + offsetY;
+        
+        // Bounds checking
+        if (realX + 320 > window.innerWidth) realX = x - 340;
+        if (realY + 280 > window.innerHeight) realY = window.innerHeight - 280;
+        if (realX < 0) realX = 10;
+        if (realY < 0) realY = 10;
+
         tt.style.left = `${realX}px`; tt.style.top = `${realY}px`;
         document.getElementById('tt-name')!.innerText = it.name; document.getElementById('tt-name')!.className = `rarity-${it.rarity}`;
         document.getElementById('tt-type')!.innerText = it.type.toUpperCase(); document.getElementById('tt-desc')!.innerText = it.desc;
@@ -2342,8 +2348,17 @@ export class Game {
     hideTT() { document.getElementById('game-tooltip')!.style.display = 'none'; document.getElementById('comparison-tooltip')!.style.display = 'none'; }
     showSpellTT(s: Spell, x: number, y: number) {
         const tt = document.getElementById('game-tooltip')!; tt.style.display = 'block';
-        const realX = Math.min(x, window.innerWidth - 320);
-        let realY = y; if (realY + 220 > window.innerHeight) realY = window.innerHeight - 220;
+        const offsetX = 20;
+        const offsetY = 20;
+        let realX = x + offsetX;
+        let realY = y + offsetY;
+
+        // Bounds checking
+        if (realX + 320 > window.innerWidth) realX = x - 340;
+        if (realY + 220 > window.innerHeight) realY = window.innerHeight - 220;
+        if (realX < 0) realX = 10;
+        if (realY < 0) realY = 10;
+
         tt.style.left = `${realX}px`; tt.style.top = `${realY}px`;
         document.getElementById('tt-name')!.innerText = s.name; document.getElementById('tt-name')!.className = `rarity-mithril`;
         document.getElementById('tt-type')!.innerText = `SPELL (${s.type.toUpperCase()})`; document.getElementById('tt-desc')!.innerText = s.desc;
@@ -2439,13 +2454,11 @@ export class Game {
             const priceMult = 1 + this.currentDepth * 0.05;
             const finalPrice = this.isSandbox ? 0 : Math.floor(it.price * priceMult);
             sl.onclick = () => {
-                if (p.gold >= finalPrice) {
-                    if (p.addItem(it)) {
+                if (this.isSandbox || p.gold >= finalPrice) {
+                    if (p.addItem({ ...it })) {
                         if (!this.isSandbox) {
                             p.gold -= finalPrice;
                             e.inventory.splice(idx, 1);
-                        } else {
-                            // Infinite supply in sandbox: don't splice
                         }
                         this.hideTT();
                         this.renderShop(e);
@@ -2766,13 +2779,48 @@ export class Game {
     }
     showMeleeTT(a: MeleeAbility, x: number, y: number) {
         const tt = document.getElementById('game-tooltip')!; tt.style.display = 'block';
-        const realX = Math.min(x, window.innerWidth - 320);
-        let realY = y; if (realY + 220 > window.innerHeight) realY = window.innerHeight - 220;
+        const offsetX = 20;
+        const offsetY = 20;
+        let realX = x + offsetX;
+        let realY = y + offsetY;
+        
+        // Bounds checking
+        if (realX + 320 > window.innerWidth) realX = x - 340;
+        if (realY + 220 > window.innerHeight) realY = window.innerHeight - 220;
+        if (realX < 0) realX = 10;
+        if (realY < 0) realY = 10;
+
         tt.style.left = `${realX}px`; tt.style.top = `${realY}px`;
         document.getElementById('tt-name')!.innerText = a.name; document.getElementById('tt-name')!.className = `rarity-dragon`;
         document.getElementById('tt-type')!.innerText = `MELEE ABILITY`; document.getElementById('tt-desc')!.innerText = a.desc;
         document.getElementById('tt-price')!.innerText = `Cooldown: ${a.cooldown}s`;
         document.getElementById('tt-stats')!.innerText = `Damage: ${a.damage}`;
+    }
+    showSkillTT(node: SkillNode, x: number, y: number) {
+        const tt = document.getElementById('game-tooltip')!; tt.style.display = 'block';
+        const offsetX = 20;
+        const offsetY = 20;
+        let realX = x + offsetX;
+        let realY = y + offsetY;
+
+        // Bounds checking
+        if (realX + 320 > window.innerWidth) realX = x - 340;
+        if (realY + 200 > window.innerHeight) realY = window.innerHeight - 200;
+        if (realX < 0) realX = 10;
+        if (realY < 0) realY = 10;
+
+        tt.style.left = `${realX}px`; tt.style.top = `${realY}px`;
+        
+        const isUnlocked = this.player.unlockedSkills.has(node.id);
+        const canUnlock = !isUnlocked && (node.requires.length === 0 || node.requires.every(r => this.player.unlockedSkills.has(r)));
+        let status = isUnlocked ? 'UNLOCKED' : (canUnlock ? `Available: ${node.cost} SP` : 'LOCKED');
+
+        document.getElementById('tt-name')!.innerText = node.name;
+        document.getElementById('tt-name')!.className = isUnlocked ? 'rarity-mithril' : (canUnlock ? 'rarity-steel' : 'rarity-iron');
+        document.getElementById('tt-type')!.innerText = `${node.type.toUpperCase()} SKILL`;
+        document.getElementById('tt-desc')!.innerText = node.desc;
+        document.getElementById('tt-price')!.innerText = status;
+        document.getElementById('tt-stats')!.innerText = "";
     }
     screenToWorld(mx: number, my: number) { const cx = this.canvas.width / 2, cy = this.canvas.height / 2; let x = mx - cx, y = (my - cy) / 0.7, a = -Math.PI / 4; const rx = x * Math.cos(a) - y * Math.sin(a), ry = x * Math.sin(a) + y * Math.cos(a); return { x: rx + this.player.x, y: ry + this.player.y }; }
 }
