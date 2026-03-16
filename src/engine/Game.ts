@@ -16,74 +16,160 @@ interface Item {
 
 interface Spell {
     id: string; name: string; icon: string; image: string; desc: string; type: 'projectile' | 'aoe' | 'buff' | 'utility';
-    cooldown: number; damage: number; color: string; projectileShape?: 'circle' | 'star' | 'bolt' | 'wave' | 'pulse';
-    aoeType?: 'circle' | 'cloud' | 'cone'; effect?: 'slow' | 'burn' | 'lifesteal' | 'chain' | 'fear' | 'weaken' | 'regen' | 'haste' | 'shield' | 'root'; mana?: number;
+    cooldown: number; damage: number; color: string; projectileShape?: 'circle' | 'star' | 'bolt' | 'wave' | 'pulse' | 'boulder' | 'dart' | 'beam' | 'orb';
+    aoeType?: 'circle' | 'cloud' | 'cone' | 'line' | 'rain'; effect?: 'slow' | 'burn' | 'lifesteal' | 'chain' | 'fear' | 'weaken' | 'regen' | 'haste' | 'shield' | 'root' | 'poison' | 'blind' | 'shatter' | 'knockback' | 'curse' | 'purify' | 'enchant' | 'petrify'; mana?: number;
 }
 
 // --- DATABASES ---
 
 const ITEM_POOL: Record<string, Item> = {};
 const SPELL_DB: Record<string, Spell> = {
-    'magic_missile': { id: 'magic_missile', name: 'Magic Missile', icon: '✨', image: '', desc: 'Fires a seeking bolt of arcane energy.', type: 'projectile', cooldown: 0.5, damage: 20, color: '#4fc3f7', projectileShape: 'bolt' },
+    // --- PROJECTILE SPELLS (each has distinct shape + effect) ---
+    'magic_missile': { id: 'magic_missile', name: 'Magic Missile', icon: '✨', image: '', desc: 'Fires a seeking bolt of arcane energy.', type: 'projectile', cooldown: 0.5, damage: 20, color: '#4fc3f7', projectileShape: 'orb' },
     'fireball': { id: 'fireball', name: 'Fireball', icon: '🔥', image: '', desc: 'Launches a massive ball of fire that creates a burning explosion.', type: 'projectile', effect: 'burn', cooldown: 3, damage: 80, color: '#e67e22', projectileShape: 'circle' },
-    'frost_nova': { id: 'frost_nova', name: 'Frost Nova', icon: '❄️', image: '', desc: 'Emits a freezing pulse that slows all nearby enemies.', type: 'aoe', aoeType: 'circle', effect: 'slow', cooldown: 5, damage: 40, color: '#a29bfe' },
-    'heal': { id: 'heal', name: 'Holy Heal', icon: '💖', image: '', desc: 'Restores a significant amount of health to the caster.', type: 'buff', effect: 'regen', cooldown: 10, damage: 50, color: '#2ecc71' },
-    'blink': { id: 'blink', name: 'Ether Blink', icon: '🌀', image: '', desc: 'Instantly teleports the caster to a target location.', type: 'utility', cooldown: 4, damage: 350, color: '#9b59b6' },
-    'toxic_mist': { id: 'toxic_mist', name: 'Toxic Mist', icon: '🤢', image: '', desc: 'Creates a lingering cloud of toxic acid that burns enemies.', type: 'aoe', aoeType: 'cloud', effect: 'burn', cooldown: 7, damage: 15, color: '#27ae60' },
-    'thunder_bolt': { id: 'thunder_bolt', name: 'Thunder Bolt', icon: '⚡', image: '', desc: 'Strikes a single target with heavy lightning, rooting it.', type: 'projectile', effect: 'root', cooldown: 4, damage: 120, color: '#f1c40f', projectileShape: 'bolt' },
-    'arcane_bolt': { id: 'arcane_bolt', name: 'Arcane Bolt', icon: '💠', image: '', desc: 'Fires a rapid stream of weak but weakening arcane pulses.', type: 'projectile', effect: 'weaken', cooldown: 0.2, damage: 12, color: '#8e44ad', projectileShape: 'pulse' },
+    'thunder_bolt': { id: 'thunder_bolt', name: 'Thunder Bolt', icon: '⚡', image: '', desc: 'Strikes a single target with heavy lightning, rooting it in place.', type: 'projectile', effect: 'root', cooldown: 4, damage: 120, color: '#f1c40f', projectileShape: 'bolt' },
+    'arcane_bolt': { id: 'arcane_bolt', name: 'Arcane Bolt', icon: '💠', image: '', desc: 'Fires a rapid stream of arcane pulses.', type: 'projectile', cooldown: 0.2, damage: 12, color: '#8e44ad', projectileShape: 'pulse' },
     'chain_lightning': { id: 'chain_lightning', name: 'Chain Lightning', icon: '🌩️', image: '', desc: 'A lightning strike that arcs between multiple targets.', type: 'projectile', effect: 'chain', cooldown: 4, damage: 60, color: '#f1c40f', projectileShape: 'bolt' },
-    'meteor_fall': { id: 'meteor_fall', name: 'Meteor Fall', icon: '☄️', image: '', desc: 'Calls down a meteor to strike a targeted area for high damage.', type: 'aoe', aoeType: 'circle', effect: 'burn', cooldown: 12, damage: 250, color: '#d35400' },
-    'ice_spike': { id: 'ice_spike', name: 'Ice Spike', icon: '🧊', image: '', desc: 'Launches a sharp ice dart that slows the target on impact.', type: 'projectile', effect: 'slow', cooldown: 3, damage: 110, color: '#54a0ff', projectileShape: 'bolt' },
+    'ice_spike': { id: 'ice_spike', name: 'Ice Spike', icon: '🧊', image: '', desc: 'Launches a sharp ice dart that slows the target on impact.', type: 'projectile', effect: 'slow', cooldown: 3, damage: 110, color: '#54a0ff', projectileShape: 'dart' },
     'vampiric_touch': { id: 'vampiric_touch', name: 'Vampiric Touch', icon: '🧛', image: '', desc: 'Drains health from enemies and restores it to the caster.', type: 'projectile', effect: 'lifesteal', cooldown: 5, damage: 35, color: '#c0392b', projectileShape: 'pulse' },
-    'wind_walk': { id: 'wind_walk', name: 'Wind Walk', icon: '🌬️', image: '', desc: 'Increases movement speed significantly for a short duration.', type: 'buff', effect: 'haste', cooldown: 20, damage: 2, color: '#81ecec' },
-    'nova_blast': { id: 'nova_blast', name: 'Nova Blast', icon: '💥', image: '', desc: 'Releases a sudden burst of energy around the caster.', type: 'aoe', aoeType: 'circle', cooldown: 2, damage: 45, color: '#fdcb6e' },
-    'bless': { id: 'bless', name: 'Blessing', icon: '🕯️', image: '', desc: 'Grants a continuous health regeneration effect.', type: 'buff', effect: 'regen', cooldown: 25, damage: 8, color: '#fab1a0' },
-    'curse': { id: 'curse', name: 'Dark Curse', icon: '💀', image: '', desc: 'Weakens enemies in an area, reducing their effectiveness.', type: 'aoe', aoeType: 'circle', effect: 'weaken', cooldown: 15, damage: 0, color: '#2d3436' },
-    'radiant_beam': { id: 'radiant_beam', name: 'Radiant Beam', icon: '🔆', image: '', desc: 'Fires a beam of holy light that burns enemies.', type: 'projectile', effect: 'burn', cooldown: 1, damage: 55, color: '#fff' },
-    'arcane_shield': { id: 'arcane_shield', name: 'Mana Shield', icon: '🛡️', image: '', desc: 'Resets all spell cooldowns for 10 seconds.', type: 'buff', effect: 'shield', cooldown: 15, damage: 12, color: '#3498db' },
-    'venom_dart': { id: 'venom_dart', name: 'Venom Dart', icon: '🏹', image: '', desc: 'Fires a toxic dart that poisons and burns enemies.', type: 'projectile', effect: 'burn', cooldown: 1, damage: 8, color: '#badc58' },
-    'shadow_bolt': { id: 'shadow_bolt', name: 'Shadow Bolt', icon: '🖤', image: '', desc: 'Launches a bolt of shadow that strikes fear into enemies.', type: 'projectile', effect: 'fear', cooldown: 1.5, damage: 70, color: '#30336b' },
-    'soul_tear': { id: 'soul_tear', name: 'Soul Tear', icon: '👻', image: '', desc: 'Tears at the target\'s soul, weakening their defenses.', type: 'projectile', effect: 'weaken', cooldown: 8, damage: 120, color: '#95afc0' },
+    'shadow_bolt': { id: 'shadow_bolt', name: 'Shadow Bolt', icon: '🖤', image: '', desc: 'Launches a bolt of shadow that strikes fear into enemies.', type: 'projectile', effect: 'fear', cooldown: 1.5, damage: 70, color: '#30336b', projectileShape: 'orb' },
+    'soul_tear': { id: 'soul_tear', name: 'Soul Tear', icon: '👻', image: '', desc: 'Tears at the enemy soul, making them take 50% more damage.', type: 'projectile', effect: 'curse', cooldown: 8, damage: 120, color: '#95afc0', projectileShape: 'wave' },
+    'radiant_beam': { id: 'radiant_beam', name: 'Radiant Beam', icon: '🔆', image: '', desc: 'Fires a holy beam that purifies enemies, removing frenzy and dealing bonus to undead.', type: 'projectile', effect: 'purify', cooldown: 1, damage: 55, color: '#fff', projectileShape: 'beam' },
+    'venom_dart': { id: 'venom_dart', name: 'Venom Dart', icon: '🏹', image: '', desc: 'Fires a toxic dart that applies stacking poison.', type: 'projectile', effect: 'poison', cooldown: 1, damage: 8, color: '#badc58', projectileShape: 'dart' },
+    'astral_blast': { id: 'astral_blast', name: 'Astral Blast', icon: '🌟', image: '', desc: 'Cold starlight that blinds enemies, making them wander aimlessly.', type: 'projectile', effect: 'blind', cooldown: 1, damage: 45, color: '#f5f6fa', projectileShape: 'star' },
+    'storm_strike': { id: 'storm_strike', name: 'Storm Strike', icon: '⛈️', image: '', desc: 'Calls down a lightning strike that arcs to adjacent enemies.', type: 'projectile', effect: 'chain', cooldown: 2.5, damage: 130, color: '#00a8ff', projectileShape: 'bolt' },
+    'celestial_beam': { id: 'celestial_beam', name: 'Celestial Beam', icon: '🔦', image: '', desc: 'A focused beam of celestial fire that burns enemies.', type: 'projectile', effect: 'burn', cooldown: 7, damage: 180, color: '#f9ca24', projectileShape: 'beam' },
+    'frost_lance': { id: 'frost_lance', name: 'Frost Lance', icon: '🔱', image: '', desc: 'A spear of ice that shatters slowed/rooted enemies for 2x damage.', type: 'projectile', effect: 'shatter', cooldown: 3, damage: 120, color: '#70a1ff', projectileShape: 'bolt' },
+    'sun_fire': { id: 'sun_fire', name: 'Sun Fire', icon: '☀️', image: '', desc: 'Launches a miniature sun that blinds enemies on impact.', type: 'projectile', effect: 'blind', cooldown: 6, damage: 95, color: '#f0932b', projectileShape: 'circle' },
+    'mind_blast': { id: 'mind_blast', name: 'Mind Blast', icon: '🧠', image: '', desc: 'A psychic shock that roots the target in place.', type: 'projectile', effect: 'root', cooldown: 6, damage: 105, color: '#a55eea', projectileShape: 'wave' },
+    'life_drain': { id: 'life_drain', name: 'Life Drain', icon: '🧪', image: '', desc: 'Drains the life force of a target to heal yourself.', type: 'projectile', effect: 'lifesteal', cooldown: 9, damage: 60, color: '#20bf6b', projectileShape: 'orb' },
+    'chaos_bolt': { id: 'chaos_bolt', name: 'Chaos Bolt', icon: '🎲', image: '', desc: 'Fires a chaotic projectile that weakens the enemy.', type: 'projectile', effect: 'weaken', cooldown: 0.8, damage: 55, color: '#be2edd', projectileShape: 'star' },
+    'soul_reap': { id: 'soul_reap', name: 'Soul Reap', icon: '🪦', image: '', desc: 'Reaps the vitality of a target, stealing health.', type: 'projectile', effect: 'lifesteal', cooldown: 6, damage: 95, color: '#4a4a4a', projectileShape: 'wave' },
+    'blood_boil': { id: 'blood_boil', name: 'Blood Boil', icon: '🩸', image: '', desc: 'Boils an enemy blood, chaining burn to nearby foes.', type: 'projectile', effect: 'burn', cooldown: 4, damage: 65, color: '#c0392b', projectileShape: 'pulse' },
+    'prismatic_ray': { id: 'prismatic_ray', name: 'Prismatic Ray', icon: '🌈', image: '', desc: 'Fires a piercing beam that applies a random effect.', type: 'projectile', cooldown: 6, damage: 90, color: '#fff', projectileShape: 'beam' },
+    'living_bomb': { id: 'living_bomb', name: 'Living Bomb', icon: '💣', image: '', desc: 'Attaches a volatile charge that explodes after a delay.', type: 'projectile', effect: 'burn', cooldown: 10, damage: 150, color: '#e67e22', projectileShape: 'circle' },
+    'petrify': { id: 'petrify', name: 'Petrify', icon: '🗿', image: '', desc: 'Turns an enemy to stone for 5 seconds. They cannot move or act.', type: 'projectile', effect: 'petrify', cooldown: 12, damage: 40, color: '#7f8c8d', projectileShape: 'boulder' },
+    'midas_touch': { id: 'midas_touch', name: 'Midas Touch', icon: '🪙', image: '', desc: 'Marks an enemy; if killed, they drop 4x more gold.', type: 'projectile', effect: 'weaken', cooldown: 20, damage: 10, color: '#f1c40f', projectileShape: 'orb' },
+
+    // --- AOE SPELLS (only 2 circles, rest are cloud/cone/line/rain) ---
+    'frost_nova': { id: 'frost_nova', name: 'Frost Nova', icon: '❄️', image: '', desc: 'Emits a freezing pulse that slows all nearby enemies.', type: 'aoe', aoeType: 'circle', effect: 'slow', cooldown: 5, damage: 40, color: '#a29bfe' },
+    'meteor_fall': { id: 'meteor_fall', name: 'Meteor Fall', icon: '☄️', image: '', desc: 'Calls down a meteor to strike a targeted area.', type: 'aoe', aoeType: 'circle', effect: 'burn', cooldown: 12, damage: 250, color: '#d35400' },
+    'toxic_mist': { id: 'toxic_mist', name: 'Toxic Mist', icon: '🤢', image: '', desc: 'Creates a lingering cloud of toxic acid.', type: 'aoe', aoeType: 'cloud', effect: 'burn', cooldown: 7, damage: 15, color: '#27ae60' },
     'dragon_breath': { id: 'dragon_breath', name: 'Dragon Breath', icon: '🐲', image: '', desc: 'Breathes fire in a cone in front of the caster.', type: 'aoe', aoeType: 'cone', effect: 'burn', cooldown: 6, damage: 90, color: '#eb4d4b' },
-    'void_nova': { id: 'void_nova', name: 'Void Nova', icon: '🌑', image: '', desc: 'An explosion of void energy that causes fear in all nearby enemies.', type: 'aoe', aoeType: 'circle', effect: 'fear', cooldown: 8, damage: 110, color: '#2c3e50' },
-    'soul_reap': { id: 'soul_reap', name: 'Soul Reap', icon: '🪦', image: '', desc: 'Reaps the vitality of a target, stealing health.', type: 'projectile', effect: 'lifesteal', cooldown: 6, damage: 95, color: '#4a4a4a' },
-    'astral_blast': { id: 'astral_blast', name: 'Astral Blast', icon: '🌟', image: '', desc: 'Cold starlight that slows enemies in their tracks.', type: 'projectile', effect: 'slow', cooldown: 1, damage: 45, color: '#f5f6fa' },
+    'curse': { id: 'curse', name: 'Dark Curse', icon: '💀', image: '', desc: 'Creates a dark fog that weakens enemies who enter it.', type: 'aoe', aoeType: 'cloud', effect: 'weaken', cooldown: 15, damage: 0, color: '#2d3436' },
+    'void_nova': { id: 'void_nova', name: 'Void Nova', icon: '🌑', image: '', desc: 'A forward blast of void energy causing fear.', type: 'aoe', aoeType: 'cone', effect: 'fear', cooldown: 8, damage: 110, color: '#2c3e50' },
+    'earthquake': { id: 'earthquake', name: 'Earthquake', icon: '🌍', image: '', desc: 'Opens a ground fissure toward the cursor, rooting and damaging.', type: 'aoe', aoeType: 'line', effect: 'root', cooldown: 10, damage: 150, color: '#7f8c8d' },
+    'wind_burst': { id: 'wind_burst', name: 'Wind Burst', icon: '🌪️', image: '', desc: 'A blast of wind that knocks enemies back and away.', type: 'aoe', aoeType: 'cone', effect: 'knockback', cooldown: 4, damage: 65, color: '#dcdde1' },
     'inferno': { id: 'inferno', name: 'Inferno', icon: '🌋', image: '', desc: 'Ignites a large area, causing continuous fire damage.', type: 'aoe', aoeType: 'cloud', effect: 'burn', cooldown: 15, damage: 200, color: '#e84118' },
-    'storm_strike': { id: 'storm_strike', name: 'Storm Strike', icon: '⛈️', image: '', desc: 'Calls down a lightning strike that arcs to adjacent enemies.', type: 'projectile', effect: 'chain', cooldown: 2.5, damage: 130, color: '#00a8ff' },
-    'earth_quake': { id: 'earth_quake', name: 'Earthquake', icon: '🌍', image: '', desc: 'Shakes the ground to slow and damage all nearby enemies.', type: 'aoe', aoeType: 'circle', effect: 'slow', cooldown: 10, damage: 150, color: '#7f8c8d' },
-    'nature_touch': { id: 'nature_touch', name: 'Nature Touch', icon: '🌿', image: '', desc: 'Calls upon nature to rapidly regenerate your health.', type: 'buff', effect: 'regen', cooldown: 12, damage: 70, color: '#4cd137' },
-    'wind_burst': { id: 'wind_burst', name: 'Wind Burst', icon: '🌪️', image: '', desc: 'A blast of wind that causes enemies to flee in panic.', type: 'aoe', aoeType: 'cone', effect: 'fear', cooldown: 4, damage: 65, color: '#dcdde1' },
-    'shadow_step': { id: 'shadow_step', name: 'Shadow Step', icon: '👣', image: '', desc: 'Creates two linked portals for rapid movement.', type: 'utility', cooldown: 12, damage: 0, color: '#2f3640' },
-    'celestial_beam': { id: 'celestial_beam', name: 'Celestial Beam', icon: '🔦', image: '', desc: 'A focused beam of celestial energy that burns targets.', type: 'projectile', effect: 'burn', cooldown: 7, damage: 180, color: '#f9ca24', projectileShape: 'bolt' },
-    'venom_wave': { id: 'venom_wave', name: 'Venom Wave', icon: '🌊', image: '', desc: 'A wave of toxic spit that poisons enemies in a cone.', type: 'aoe', aoeType: 'cone', effect: 'burn', cooldown: 9, damage: 30, color: '#badc58' },
-    'arcane_storm': { id: 'arcane_storm', name: 'Arcane Storm', icon: '�', image: '', desc: 'Summons an arcane storm that continuously damages an area.', type: 'aoe', aoeType: 'cloud', cooldown: 20, damage: 300, color: '#a29bfe' },
-    'holy_wrath': { id: 'holy_wrath', name: 'Holy Wrath', icon: '⚔️', image: '', desc: 'Crucifies enemies in a golden cross, rooting them and dealing continuous damage.', type: 'aoe', aoeType: 'circle', cooldown: 12, damage: 140, color: '#ffec8b' },
-    'blood_boil': { id: 'blood_boil', name: 'Blood Boil', icon: '🩸', image: '', desc: 'Heats the blood of nearby enemies to cause burning damage.', type: 'aoe', aoeType: 'circle', effect: 'burn', cooldown: 11, damage: 85, color: '#c0392b' },
-    'iron_skin': { id: 'iron_skin', name: 'Iron Skin', icon: '🔩', image: '', desc: 'Hardens your skin, granting a temporary protective shield.', type: 'buff', effect: 'shield', cooldown: 25, damage: 20, color: '#95afc0' },
-    'gravity_well': { id: 'gravity_well', name: 'Gravity Well', icon: '🕳️', image: '', desc: 'Creates a void that slows and damages enemies within its reach.', type: 'aoe', aoeType: 'cloud', effect: 'slow', cooldown: 14, damage: 160, color: '#130f40' },
-    'chaos_bolt': { id: 'chaos_bolt', name: 'Chaos Bolt', icon: '🎲', image: '', desc: 'Fires a chaotic projectile that weakens the enemy\'s spirit.', type: 'projectile', effect: 'weaken', cooldown: 0.8, damage: 55, color: '#be2edd' },
-    'frost_lance': { id: 'frost_lance', name: 'Frost Lance', icon: '🔱', image: '', desc: 'A spear of ice that pierces and slows enemies.', type: 'projectile', effect: 'slow', cooldown: 3, damage: 120, color: '#70a1ff', projectileShape: 'bolt' },
-    'sun_fire': { id: 'sun_fire', name: 'Sun Fire', icon: '☀️', image: '', desc: 'Launches a miniature sun that burns and damages enemies.', type: 'projectile', effect: 'burn', cooldown: 6, damage: 95, color: '#f0932b' },
-    'mind_blast': { id: 'mind_blast', name: 'Mind Blast', icon: '🧠', image: '', desc: 'A psychic shock that roots the target in place.', type: 'projectile', effect: 'root', cooldown: 6, damage: 105, color: '#a55eea' },
-    'life_drain': { id: 'life_drain', name: 'Life Drain', icon: '🧪', image: '', desc: 'Drains the life force of a target to heal yourself.', type: 'projectile', effect: 'lifesteal', cooldown: 9, damage: 60, color: '#20bf6b' },
-    'thunder_clap': { id: 'thunder_clap', name: 'Thunder Clap', icon: '👏', image: '', desc: 'A clap of thunder that roots all nearby enemies.', type: 'aoe', aoeType: 'circle', effect: 'root', cooldown: 8, damage: 75, color: '#fed330' },
-    'ethereal_form': { id: 'ethereal_form', name: 'Ethereal Form', icon: '🌫️', image: '', desc: 'Become ethereal, increasing your movement speed significantly.', type: 'buff', effect: 'haste', cooldown: 30, damage: 50, color: '#d1d8e0' },
-    'star_fall': { id: 'star_fall', name: 'Star Fall', icon: '🌠', image: '', desc: 'Calls down falling stars that burn all enemies in the area.', type: 'aoe', aoeType: 'circle', effect: 'burn', cooldown: 18, damage: 250, color: '#45aaf2' },
+    'star_fall': { id: 'star_fall', name: 'Star Fall', icon: '🌠', image: '', desc: 'Calls down falling stars that rain in a targeted area.', type: 'aoe', aoeType: 'rain', effect: 'burn', cooldown: 18, damage: 250, color: '#45aaf2' },
+    'spectral_wall': { id: 'spectral_wall', name: 'Spectral Wall', icon: '🧱', image: '', desc: 'Creates a line of spectral energy that knocks enemies back.', type: 'aoe', aoeType: 'line', effect: 'knockback', cooldown: 12, damage: 120, color: '#d1d8e0' },
+    'emerald_spores': { id: 'emerald_spores', name: 'Emerald Spores', icon: '🍄', image: '', desc: 'Releases a cloud of spores that poisons enemies over time.', type: 'aoe', aoeType: 'cloud', effect: 'poison', cooldown: 14, damage: 30, color: '#2ecc71' },
+    'thunder_clap': { id: 'thunder_clap', name: 'Thunder Clap', icon: '👏', image: '', desc: 'A frontal thunder clap that roots all enemies hit.', type: 'aoe', aoeType: 'cone', effect: 'root', cooldown: 8, damage: 75, color: '#fed330' },
     'burning_vines': { id: 'burning_vines', name: 'Burning Vines', icon: '🎋', image: '', desc: 'Roots enemies in burning vines, causing continuous damage.', type: 'aoe', aoeType: 'cloud', effect: 'root', cooldown: 12, damage: 100, color: '#ff4d4d' },
-    'mirror_image': { id: 'mirror_image', name: 'Mirror Image', icon: '🪞', image: '', desc: 'Summons a mirror image to distract and confuse enemies.', type: 'utility', cooldown: 40, damage: 0, color: '#a29bfe' },
-    // NEW SPELLS
-    'petrify': { id: 'petrify', name: 'Petrify', icon: '🗿', image: '', desc: 'Turns the target to stone, rooting them for a long duration.', type: 'projectile', effect: 'root', cooldown: 12, damage: 40, color: '#95afc0', projectileShape: 'pulse' },
-    'midas_touch': { id: 'midas_touch', name: 'Midas Touch', icon: '🪙', image: '', desc: 'Marks an enemy; if killed, they drop significantly more gold.', type: 'projectile', effect: 'weaken', cooldown: 20, damage: 10, color: '#f1c40f', projectileShape: 'pulse' },
-    'abyssal_pull': { id: 'abyssal_pull', name: 'Abyssal Pull', icon: '🧲', image: '', desc: 'Creates a magnetic rift that pulls all nearby enemies to its center.', type: 'aoe', aoeType: 'circle', cooldown: 15, damage: 80, color: '#130f40' },
-    'chrono_warp': { id: 'chrono_warp', name: 'Chronos Warp', icon: '⏳', image: '', desc: 'Accelerates your time, granting haste and resetting a random cooldown.', type: 'buff', effect: 'haste', cooldown: 45, damage: 0, color: '#3498db' },
-    'living_bomb': { id: 'living_bomb', name: 'Living Bomb', icon: '💣', image: '', desc: 'Attaches a volatile charge to an enemy that explodes after a delay.', type: 'projectile', effect: 'burn', cooldown: 10, damage: 150, color: '#e67e22', projectileShape: 'circle' },
-    'chaos_nova': { id: 'chaos_nova', name: 'Chaos Nova', icon: '🎰', image: '', desc: 'Releases a burst of unpredictable energy with a random status effect.', type: 'aoe', aoeType: 'circle', cooldown: 8, damage: 100, color: '#be2edd' },
-    'spectral_wall': { id: 'spectral_wall', name: 'Spectral Wall', icon: '🧱', image: '', desc: 'Creates a line of spectral energy that damages and slows enemies.', type: 'aoe', aoeType: 'cone', effect: 'slow', cooldown: 12, damage: 120, color: '#d1d8e0' },
-    'emerald_spores': { id: 'emerald_spores', name: 'Emerald Spores', icon: '🍄', image: '', desc: 'Releases a cloud of spores that causes enemies to wander in confusion.', type: 'aoe', aoeType: 'cloud', effect: 'fear', cooldown: 14, damage: 30, color: '#2ecc71' },
-    'prismatic_ray': { id: 'prismatic_ray', name: 'Prismatic Ray', icon: '🌈', image: '', desc: 'Fires a piercing beam that applies a random weakness to all struck.', type: 'projectile', effect: 'weaken', cooldown: 6, damage: 90, color: '#fff', projectileShape: 'bolt' },
-    'soul_harvest': { id: 'soul_harvest', name: 'Soul Harvest', icon: '🏺', image: '', desc: 'Drains the life force of all nearby enemies to heal yourself.', type: 'aoe', aoeType: 'circle', effect: 'lifesteal', cooldown: 25, damage: 60, color: '#c0392b' },
-    'electric_shield': { id: 'electric_shield', name: 'Electric Shield', icon: '⛓️', image: '', desc: 'Surrounds you with chains of lightning that damage nearby attackers.', type: 'buff', effect: 'shield', cooldown: 30, damage: 40, color: '#f1c40f' }
+    'gravity_well': { id: 'gravity_well', name: 'Gravity Well', icon: '🕳️', image: '', desc: 'Creates a void that slows and damages enemies within its reach.', type: 'aoe', aoeType: 'cloud', effect: 'slow', cooldown: 14, damage: 160, color: '#130f40' },
+    'arcane_storm': { id: 'arcane_storm', name: 'Arcane Storm', icon: '🔮', image: '', desc: 'Summons a rain of arcane bolts over an area.', type: 'aoe', aoeType: 'rain', cooldown: 20, damage: 300, color: '#a29bfe' },
+    'venom_wave': { id: 'venom_wave', name: 'Venom Wave', icon: '🌊', image: '', desc: 'A wave of toxic spit that poisons enemies in a cone.', type: 'aoe', aoeType: 'cone', effect: 'poison', cooldown: 9, damage: 30, color: '#badc58' },
+
+    // --- BUFF SPELLS ---
+    'heal': { id: 'heal', name: 'Holy Heal', icon: '💖', image: '', desc: 'Restores a significant amount of health to the caster.', type: 'buff', effect: 'regen', cooldown: 10, damage: 50, color: '#2ecc71' },
+    'wind_walk': { id: 'wind_walk', name: 'Wind Walk', icon: '🌬️', image: '', desc: 'Increases movement speed significantly for a short duration.', type: 'buff', effect: 'haste', cooldown: 20, damage: 2, color: '#81ecec' },
+    'nova_blast': { id: 'nova_blast', name: 'Nova Blast', icon: '💥', image: '', desc: 'Releases a sudden shockwave ring pushing enemies outward.', type: 'buff', effect: 'shield', cooldown: 2, damage: 45, color: '#fdcb6e' },
+    'bless': { id: 'bless', name: 'Blessing', icon: '🕯️', image: '', desc: 'Grants a continuous health regeneration effect.', type: 'buff', effect: 'regen', cooldown: 25, damage: 8, color: '#fab1a0' },
+    'nature_touch': { id: 'nature_touch', name: 'Nature Touch', icon: '🌿', image: '', desc: 'Calls upon nature to rapidly regenerate your health.', type: 'buff', effect: 'regen', cooldown: 12, damage: 70, color: '#4cd137' },
+    'iron_skin': { id: 'iron_skin', name: 'Iron Skin', icon: '🔩', image: '', desc: 'Hardens your skin, granting a temporary protective shield.', type: 'buff', effect: 'shield', cooldown: 25, damage: 20, color: '#95afc0' },
+    'ethereal_form': { id: 'ethereal_form', name: 'Ethereal Form', icon: '🌫️', image: '', desc: 'Become ethereal, increasing your movement speed significantly.', type: 'buff', effect: 'haste', cooldown: 30, damage: 50, color: '#d1d8e0' },
+    'arcane_shield': { id: 'arcane_shield', name: 'Mana Shield', icon: '🛡️', image: '', desc: 'Resets all spell cooldowns for 10 seconds.', type: 'buff', effect: 'shield', cooldown: 15, damage: 12, color: '#3498db' },
+    'electric_shield': { id: 'electric_shield', name: 'Electric Shield', icon: '⛓️', image: '', desc: 'Surrounds you with chains of lightning that damage nearby attackers.', type: 'buff', effect: 'shield', cooldown: 30, damage: 40, color: '#f1c40f' },
+    'soul_harvest': { id: 'soul_harvest', name: 'Soul Harvest', icon: '🏺', image: '', desc: 'Aura drains life from all nearby enemies to heal you.', type: 'buff', effect: 'lifesteal', cooldown: 25, damage: 60, color: '#c0392b' },
+
+    // --- UTILITY SPELLS ---
+    'blink': { id: 'blink', name: 'Ether Blink', icon: '🌀', image: '', desc: 'Instantly teleports the caster to a target location.', type: 'utility', cooldown: 4, damage: 350, color: '#9b59b6' },
+    'shadow_step': { id: 'shadow_step', name: 'Shadow Step', icon: '👣', image: '', desc: 'Creates two linked portals for rapid movement.', type: 'utility', cooldown: 12, damage: 0, color: '#2f3640' },
+    'mirror_image': { id: 'mirror_image', name: 'Mirror Image', icon: '🪞', image: '', desc: 'Summons a mirror clone that distracts and fights enemies.', type: 'utility', cooldown: 40, damage: 0, color: '#a29bfe' },
+    'holy_wrath': { id: 'holy_wrath', name: 'Holy Wrath', icon: '⚔️', image: '', desc: 'Crucifies enemies in a golden cross, rooting them with continuous damage.', type: 'utility', cooldown: 12, damage: 140, color: '#ffec8b' },
+    'abyssal_pull': { id: 'abyssal_pull', name: 'Abyssal Pull', icon: '🧲', image: '', desc: 'Creates a magnetic rift that pulls all nearby enemies to its center.', type: 'utility', cooldown: 15, damage: 80, color: '#130f40' },
+    'chrono_warp': { id: 'chrono_warp', name: 'Chronos Warp', icon: '⏳', image: '', desc: 'Accelerates your time, granting haste and resetting cooldowns.', type: 'buff', effect: 'haste', cooldown: 45, damage: 0, color: '#3498db' },
+    'chaos_nova': { id: 'chaos_nova', name: 'Chaos Nova', icon: '🎰', image: '', desc: 'Releases a swirling vortex of chaotic energy with random effects.', type: 'aoe', aoeType: 'cloud', cooldown: 8, damage: 100, color: '#be2edd' },
+    'enchant': { id: 'enchant', name: 'Enchant', icon: '🫅', image: '', desc: 'Converts an enemy to fight for you. Recasting kills current minion.', type: 'projectile', effect: 'enchant', cooldown: 20, damage: 0, color: '#e056fd', projectileShape: 'orb' },
+    // Skill Tree Specific Spells
+    'ignite': { id: 'ignite', name: 'Ignite', icon: '🔥', image: '', desc: 'A quick burst of fire that causes targets to burn.', type: 'projectile', effect: 'burn', cooldown: 1, damage: 30, color: '#ff4d4d', projectileShape: 'circle' },
+    'frostbolt': { id: 'frostbolt', name: 'Frostbolt', icon: '❄️', image: '', desc: 'A freezing bolt that slows enemies on impact.', type: 'projectile', effect: 'slow', cooldown: 1.5, damage: 45, color: '#70a1ff', projectileShape: 'bolt' },
+    'arcane_missiles': { id: 'arcane_missiles', name: 'Arcane Missiles', icon: '✨', image: '', desc: 'Rapid seeking bolts of arcane energy.', type: 'projectile', cooldown: 0.3, damage: 15, color: '#a29bfe', projectileShape: 'orb' },
+    'arcane_power': { id: 'arcane_power', name: 'Arcane Power', icon: '🔮', image: '', desc: 'Briefly empowers the caster, doubling spell damage.', type: 'buff', effect: 'haste', cooldown: 20, damage: 2.0, color: '#6c5ce7' },
+    'death_coil': { id: 'death_coil', name: 'Death Coil', icon: '💀', image: '', desc: 'A dark projectile that executes low-health enemies.', type: 'projectile', effect: 'curse', cooldown: 6, damage: 100, color: '#2d3436', projectileShape: 'wave' },
+    'ice_nova': { id: 'ice_nova', name: 'Ice Nova', icon: '🧊', image: '', desc: 'A freezing pulse that slows all nearby enemies.', type: 'aoe', aoeType: 'circle', effect: 'slow', cooldown: 5, damage: 40, color: '#a29bfe' }
+};
+
+interface MeleeAbility {
+    id: string; name: string; icon: string; desc: string;
+    cooldown: number; damage: number; color: string; range: number;
+    effect?: string;
+}
+
+const MELEE_ABILITY_DB: Record<string, MeleeAbility> = {
+    'dash_strike': { id: 'dash_strike', name: 'Dash Strike', icon: '💨', desc: 'Dash forward, damaging enemies in your path.', cooldown: 4, damage: 45, color: '#f5f6fa', range: 300 },
+    'ground_stomp': { id: 'ground_stomp', name: 'Ground Stomp', icon: '🦶', desc: 'Stomp the ground, stunning nearby enemies.', cooldown: 6, damage: 30, color: '#8d6e63', range: 200, effect: 'petrify' },
+    'bleed_slash': { id: 'bleed_slash', name: 'Bleed Slash', icon: '🩸', desc: 'A heavy strike that causes enemies to bleed.', cooldown: 5, damage: 60, color: '#c0392b', range: 120, effect: 'poison' },
+    'whirlwind': { id: 'whirlwind', name: 'Whirlwind', icon: '🌪️', desc: 'Spin in a circle, hitting all adjacent enemies.', cooldown: 8, damage: 50, color: '#dcdde1', range: 150 },
+    'shield_bash': { id: 'shield_bash', name: 'Shield Bash', icon: '🛡️', desc: 'Bash with your shield, knocking enemies back.', cooldown: 5, damage: 25, color: '#95afc0', range: 100, effect: 'knockback' },
+    'leap_strike': { id: 'leap_strike', name: 'Leaping Strike', icon: '🦘', desc: 'Jump to a location and deal AOE damage on landing.', cooldown: 10, damage: 70, color: '#f39c12', range: 400 },
+    'execute': { id: 'execute', name: 'Execute', icon: '❌', desc: 'Deal massive damage to enemies below 30% health.', cooldown: 12, damage: 150, color: '#e84118', range: 120 },
+    'parry': { id: 'parry', name: 'Parry', icon: '🛡️', desc: 'Deflect incoming attacks for 1s. Counter-attack for 3x damage.', cooldown: 8, damage: 0, color: '#f1c40f', range: 80 },
+    'war_cry': { id: 'war_cry', name: 'War Cry', icon: '🗣️', desc: 'Buff yourself with +50% damage and fear nearby enemies.', cooldown: 15, damage: 0, color: '#e67e22', range: 250, effect: 'fear' },
+    'hamstring': { id: 'hamstring', name: 'Hamstring', icon: '⛓️', desc: 'Slash their legs, slowing them by 60%.', cooldown: 5, damage: 40, color: '#2f3640', range: 120, effect: 'slow' },
+    'cleave': { id: 'cleave', name: 'Cleave', icon: '🪓', desc: 'A wide frontal arc that hits multiple enemies.', cooldown: 4, damage: 45, color: '#d1d8e0', range: 160 }
+};
+
+interface SkillNode {
+    id: string; name: string; desc: string; icon: string;
+    type: 'melee' | 'spell'; cost: number; requires: string[];
+    gridPos: { x: number, y: number };
+}
+
+const MELEE_SKILL_TREE: Record<string, SkillNode> = {
+    'basic_attack': { id: 'basic_attack', name: 'Basic Attack', desc: 'Core combat training. Center root.', icon: '⚔️', type: 'melee', cost: 0, requires: [], gridPos: { x: 3, y: 1 } },
+    
+    // Speed/Bleed Path
+    'quick_strike': { id: 'quick_strike', name: 'Quick Strike', desc: 'Faster attack speed.', icon: '⚡', type: 'melee', cost: 1, requires: ['basic_attack'], gridPos: { x: 1, y: 2 } },
+    'rend': { id: 'rend', name: 'Rend', desc: 'Apply bleed on hit.', icon: '🩸', type: 'melee', cost: 2, requires: ['quick_strike'], gridPos: { x: 1, y: 4 } },
+    'bloodbath': { id: 'bloodbath', name: 'Bloodbath', desc: 'Bleeds heal you.', icon: '🍷', type: 'melee', cost: 3, requires: ['rend'], gridPos: { x: 1, y: 6 } },
+    
+    // Slam/AoE Path
+    'heavy_slam': { id: 'heavy_slam', name: 'Heavy Slam', desc: 'High damage smash.', icon: '🔨', type: 'melee', cost: 1, requires: ['basic_attack'], gridPos: { x: 2, y: 2 } },
+    'earthshaker': { id: 'earthshaker', name: 'Earthshaker', desc: 'Stun enemies.', icon: '🌋', type: 'melee', cost: 2, requires: ['heavy_slam'], gridPos: { x: 2, y: 4 } },
+    'shockwave': { id: 'shockwave', name: 'Shockwave', desc: 'Full screen knockback.', icon: '🌊', type: 'melee', cost: 3, requires: ['earthshaker'], gridPos: { x: 2, y: 6 } },
+    
+    // Spin/Cleave Path
+    'sweep': { id: 'sweep', name: 'Sweeping Strike', desc: 'Hit multiple foes.', icon: '🧹', type: 'melee', cost: 1, requires: ['basic_attack'], gridPos: { x: 5, y: 2 } },
+    'whirlwind': { id: 'whirlwind', name: 'Whirlwind', desc: 'Spinning attack.', icon: '🌪️', type: 'melee', cost: 2, requires: ['sweep'], gridPos: { x: 5, y: 4 } },
+    'bladestorm': { id: 'bladestorm', name: 'Bladestorm', desc: 'Continuous spin.', icon: '🌀', type: 'melee', cost: 3, requires: ['whirlwind'], gridPos: { x: 5, y: 6 } },
+    
+    // Shield/Counter Path
+    'shield_bash': { id: 'shield_bash', name: 'Shield Bash', desc: 'Defensive smash.', icon: '🛡️', type: 'melee', cost: 1, requires: ['basic_attack'], gridPos: { x: 6, y: 2 } },
+    'parry': { id: 'parry', name: 'Parry', desc: 'Counter-attack.', icon: '🤺', type: 'melee', cost: 2, requires: ['shield_bash'], gridPos: { x: 6, y: 4 } },
+    'fortress': { id: 'fortress', name: 'Fortress', desc: 'Immune to damage briefly.', icon: '🏰', type: 'melee', cost: 3, requires: ['parry'], gridPos: { x: 6, y: 6 } }
+};
+
+const SPELL_SKILL_TREE: Record<string, SkillNode> = {
+    // Fire School
+    'ignite': { id: 'ignite', name: 'Ignite', desc: 'Burns targets. Exclusively in Skill Tree.', icon: '🔥', type: 'spell', cost: 1, requires: [], gridPos: { x: 1, y: 1 } },
+    'fireball': { id: 'fireball', name: 'Fireball', desc: 'Explosive blast.', icon: '☄️', type: 'spell', cost: 2, requires: ['ignite'], gridPos: { x: 1, y: 2 } },
+    'inferno': { id: 'inferno', name: 'Inferno', desc: 'World of fire.', icon: '🌋', type: 'spell', cost: 3, requires: ['fireball'], gridPos: { x: 1, y: 3 } },
+    
+    // Ice School
+    'frostbolt': { id: 'frostbolt', name: 'Frostbolt', desc: 'Slows targets. Exclusively in Skill Tree.', icon: '❄️', type: 'spell', cost: 1, requires: [], gridPos: { x: 2, y: 1 } },
+    'ice_nova': { id: 'ice_nova', name: 'Ice Nova', desc: 'AoE freeze.', icon: '🧊', type: 'spell', cost: 2, requires: ['frostbolt'], gridPos: { x: 2, y: 2 } },
+    'blizzard': { id: 'blizzard', name: 'Blizzard', desc: 'Continuous ice storm.', icon: '🧥', type: 'spell', cost: 3, requires: ['ice_nova'], gridPos: { x: 2, y: 3 } },
+    
+    // Arcane School
+    'arcane_missiles': { id: 'arcane_missiles', name: 'Arcane Missiles', desc: 'Seeking bolts. Exclusively in Skill Tree.', icon: '✨', type: 'spell', cost: 1, requires: [], gridPos: { x: 4, y: 1 } },
+    'blink': { id: 'blink', name: 'Blink', desc: 'Short teleport.', icon: '🌀', type: 'spell', cost: 2, requires: ['arcane_missiles'], gridPos: { x: 4, y: 2 } },
+    'arcane_power': { id: 'arcane_power', name: 'Arcane Power', desc: 'Double damage.', icon: '🔮', type: 'spell', cost: 3, requires: ['blink'], gridPos: { x: 4, y: 3 } },
+    
+    // Dark School
+    'shadow_bolt': { id: 'shadow_bolt', name: 'Shadow Bolt', desc: 'Dark energy. Exclusively in Skill Tree.', icon: '🖤', type: 'spell', cost: 1, requires: [], gridPos: { x: 5, y: 1 } },
+    'vampiric_touch': { id: 'vampiric_touch', name: 'Vampiric Touch', desc: 'Life steal.', icon: '🧛', type: 'spell', cost: 2, requires: ['shadow_bolt'], gridPos: { x: 5, y: 2 } },
+    'death_coil': { id: 'death_coil', name: 'Death Coil', desc: 'Execute damaged foes.', icon: '💀', type: 'spell', cost: 3, requires: ['vampiric_touch'], gridPos: { x: 5, y: 3 } }
 };
 
 const materials = ['Ancient', 'Imperial', 'Mithril', 'Dragonglass', 'Abyssal', 'Celestial', 'Relic'];
@@ -202,7 +288,17 @@ function initDB() {
 initDB();
 
 function getRandomLoot(d: number, limit: number, forceKey = false): Item[] {
-    const items = Object.values(ITEM_POOL).filter(it => it.type !== 'key' && it.price <= limit);
+    const isSandbox = (window as any).game?.isSandbox;
+    const items = Object.values(ITEM_POOL).filter(it => {
+        if (it.type === 'key') return false;
+        if (it.price > limit) return false;
+        // Restrict spellbooks if they are in the skill tree
+        if (it.type === 'spellbook' && !isSandbox) {
+            const spellId = it.id.replace('spellbook_', '');
+            if (SPELL_SKILL_TREE[spellId]) return false;
+        }
+        return true;
+    });
     const out: Item[] = [];
     if (forceKey) out.push({ ...ITEM_POOL['vault_key'] });
     const count = 1 + Math.floor(Math.random() * 2);
@@ -214,7 +310,10 @@ function getRandomLoot(d: number, limit: number, forceKey = false): Item[] {
 }
 
 function getRandomSpellbook(d: number): Item {
-    const sId = Object.keys(SPELL_DB)[Math.floor(Math.random() * Object.keys(SPELL_DB).length)];
+    const isSandbox = (window as any).game?.isSandbox;
+    const restrictedSpells = Object.keys(SPELL_SKILL_TREE);
+    const availableSpells = Object.keys(SPELL_DB).filter(sId => isSandbox || !restrictedSpells.includes(sId));
+    const sId = availableSpells[Math.floor(Math.random() * availableSpells.length)];
     return { ...ITEM_POOL[`spellbook_${sId}`] };
 }
 
@@ -237,7 +336,7 @@ class FieldEffect {
                         const ex = Math.floor(e.x / 64), ey = Math.floor(e.y / 64);
                         const cx = Math.floor(this.x / 64), cy = Math.floor(this.y / 64);
                         if (tiles.some(t => cx + t[0] === ex && cy + t[1] === ey)) {
-                            e.hp -= this.damage; e.rootTimer = 0.6; // Keep rooted during effect
+                            e.hp -= this.damage; e.rootTimer = 0.6;
                             if (e.hp <= 0) game.killEnemy(e);
                         }
                     }
@@ -248,16 +347,25 @@ class FieldEffect {
                         const dist = Math.hypot(this.x - e.x, this.y - e.y);
                         if (dist < this.radius) {
                             const angle = Math.atan2(this.y - e.y, this.x - e.x);
-                            e.x += Math.cos(angle) * 100; e.y += Math.sin(angle) * 100; // Drag toward center
+                            e.x += Math.cos(angle) * 100; e.y += Math.sin(angle) * 100;
                             e.hp -= this.damage; if (e.hp <= 0) game.killEnemy(e);
                         }
                     }
                 });
             } else {
+                // Look up the spell's effect from SPELL_DB for proper cloud AOE effect application
+                const spell = SPELL_DB[this.type];
+                const spellEffect = spell ? spell.effect : null;
                 level.entities.forEach(e => {
                     if (e.type === 'enemy' && !e.dead && Math.hypot(this.x - e.x, this.y - e.y) < this.radius) {
                         e.hp -= this.damage;
-                        if (this.type === 'poison') { e.burnTimer = 3; e.burnDamage = this.damage / 2; }
+                        // Apply the spell's effect
+                        if (spellEffect === 'burn') { e.burnTimer = Math.max(e.burnTimer || 0, 2); e.burnDamage = this.damage; }
+                        if (spellEffect === 'slow') { e.slowTimer = Math.max(e.slowTimer || 0, 1.5); }
+                        if (spellEffect === 'poison') { e.poisonTimer = Math.max(e.poisonTimer || 0, 2); e.poisonDamage = this.damage; }
+                        if (spellEffect === 'weaken') { e.weakenTimer = Math.max(e.weakenTimer || 0, 2); }
+                        if (spellEffect === 'root') { e.rootTimer = Math.max(e.rootTimer || 0, 1); }
+                        if (spellEffect === 'fear') { e.fearTimer = Math.max(e.fearTimer || 0, 1.5); }
                         if (e.hp <= 0) game.killEnemy(e);
                     }
                 });
@@ -390,6 +498,16 @@ class Projectile {
 
         this.x += this.vx * dt; this.y += this.vy * dt;
         if (level.isWall(this.x, this.y)) { if (this.type === 'fireball' || this.type === 'living_bomb') this.explode(level, game); this.dead = true; return; }
+        
+        // Player Collision (if enemy projectile)
+        if (this.owner && this.owner.type === 'enemy') {
+            if (Math.hypot(this.x - game.player.x, this.y - game.player.y) < 35) {
+                game.damageTarget(game.player, this.owner, this.damage);
+                this.dead = true;
+                return;
+            }
+        }
+
         level.entities.forEach(e => {
             if (e.type === 'enemy' && !e.dead && Math.hypot(this.x - e.x, this.y - e.y) < 35) {
                 // Prevent friendly fire: enemies shouldn't damage each other
@@ -402,12 +520,40 @@ class Projectile {
                     game.log("Bomb attached!");
                 }
                 else {
-                    e.hp -= this.damage;
-                    if (this.effect === 'lifesteal') game.player.hp = Math.min(game.player.maxHp, game.player.hp + this.damage * 0.3);
+                    let dmg = this.damage;
+                    // Shatter: 2x damage to slowed or rooted targets
+                    if (this.effect === 'shatter' && (e.slowTimer > 0 || e.rootTimer > 0 || e.petrifiedTimer > 0)) dmg *= 2;
+                    // Cursed enemies take 50% more damage
+                    if (e.cursedTimer > 0) dmg *= 1.5;
+                    e.hp -= dmg;
+                    if (this.effect === 'lifesteal') game.player.hp = Math.min(game.player.maxHp, game.player.hp + dmg * 0.3);
                     if (this.effect === 'slow') { e.slowTimer = 4; }
-                    if (this.effect === 'burn') { e.burnTimer = 4; e.burnDamage = this.damage * 0.2; }
+                    if (this.effect === 'burn') { e.burnTimer = 4; e.burnDamage = dmg * 0.2; }
                     if (this.effect === 'fear') { e.fearTimer = 3; }
                     if (this.effect === 'weaken') { e.weakenTimer = 5; }
+                    if (this.effect === 'poison') { e.poisonTimer = (e.poisonTimer || 0) + 5; e.poisonDamage = (e.poisonDamage || 0) + dmg * 0.15; }
+                    if (this.effect === 'blind') { e.blindTimer = 3; }
+                    if (this.effect === 'curse') { e.cursedTimer = 5; }
+                    if (this.effect === 'knockback') {
+                        const ka = Math.atan2(e.y - this.owner.y, e.x - this.owner.x);
+                        e.x += Math.cos(ka) * 150; e.y += Math.sin(ka) * 150;
+                    }
+                    if (this.effect === 'purify') {
+                        e.frenzy = false;
+                        if (['Skeleton', 'Wraith', 'Lich'].includes(e.enemyType)) e.hp -= dmg * 0.5; // Bonus to undead
+                        game.particles.push({ x: e.x, y: e.y, life: 0.5, type: 'spark', color: '#fff' });
+                    }
+                    if (this.effect === 'petrify') {
+                        e.petrifiedTimer = 5; e.rootTimer = 0; // Petrify overrides root
+                        game.particles.push({ x: e.x, y: e.y, life: 0.8, type: 'spark', color: '#7f8c8d' });
+                    }
+                    if (this.effect === 'enchant') {
+                        // Convert enemy to enchanted ally
+                        if (game.enchantedAlly) { game.enchantedAlly.dead = true; game.enchantedAlly = null; }
+                        e.type = 'enchanted_ally'; e.baseColor = game.player.color || '#f39c12';
+                        game.enchantedAlly = e;
+                        game.log(`${e.enemyType} is now fighting for you!`);
+                    }
                     if (this.effect === 'chain') {
                         const target = level.entities.find(other => other.type === 'enemy' && !other.dead && other !== e && Math.hypot(e.x - other.x, e.y - other.y) < 300);
                         if (target) {
@@ -415,7 +561,18 @@ class Projectile {
                             game.projectiles.push(new Projectile(e.x, e.y, angle, this.type, this.owner, this.damage * 0.7, this.color, this.shape));
                         }
                     }
-                    // Lich ability logic remains (if any was here, it's not in the provided original snippet)
+                    // Prismatic ray: random effect
+                    if (this.type === 'prismatic_ray') {
+                        const effs = ['slow', 'burn', 'fear', 'root', 'poison', 'blind', 'weaken'];
+                        const re = effs[Math.floor(Math.random() * effs.length)];
+                        if (re === 'slow') e.slowTimer = 3;
+                        else if (re === 'burn') { e.burnTimer = 3; e.burnDamage = 15; }
+                        else if (re === 'fear') e.fearTimer = 2;
+                        else if (re === 'root') e.rootTimer = 2;
+                        else if (re === 'poison') { e.poisonTimer = 4; e.poisonDamage = 10; }
+                        else if (re === 'blind') e.blindTimer = 3;
+                        else if (re === 'weaken') e.weakenTimer = 4;
+                    }
                     if (e.hp <= 0) game.killEnemy(e);
                 }
                 if (!this.attachedTo) this.dead = true;
@@ -427,46 +584,113 @@ class Projectile {
         level.entities.forEach(e => { if (e.type === 'enemy' && !e.dead) { const d = Math.hypot(this.x - e.x, this.y - e.y); if (d < 200) { e.hp -= this.damage * (1 - d / 220); if (e.hp <= 0) game.killEnemy(e); } } });
     }
     draw(ctx: CanvasRenderingContext2D) {
+        ctx.save();
         ctx.fillStyle = this.color;
         ctx.shadowBlur = 25;
         ctx.shadowColor = this.color;
         const angle = Math.atan2(this.vy, this.vx);
 
         if (this.shape === 'bolt') {
-            ctx.save();
+            // Lightning zigzag bolt
             ctx.translate(this.x, this.y);
             ctx.rotate(angle);
-            ctx.fillRect(-15, -4, 30, 8);
-            ctx.fillRect(5, -10, 5, 20);
-            ctx.restore();
+            ctx.strokeStyle = this.color; ctx.lineWidth = 4; ctx.lineCap = 'round';
+            ctx.beginPath(); ctx.moveTo(-20, 0);
+            ctx.lineTo(-10, -8); ctx.lineTo(0, 4); ctx.lineTo(10, -6); ctx.lineTo(20, 0);
+            ctx.stroke();
+            // Glow core
+            ctx.globalAlpha = 0.6; ctx.lineWidth = 8;
+            ctx.beginPath(); ctx.moveTo(-20, 0);
+            ctx.lineTo(-10, -8); ctx.lineTo(0, 4); ctx.lineTo(10, -6); ctx.lineTo(20, 0);
+            ctx.stroke();
         } else if (this.shape === 'star') {
-            ctx.save();
             ctx.translate(this.x, this.y);
             ctx.rotate(Date.now() * 0.01);
             ctx.beginPath();
             for (let i = 0; i < 5; i++) {
-                ctx.lineTo(Math.cos((i * 4 * Math.PI) / 5) * 20, Math.sin((i * 4 * Math.PI) / 5) * 20);
+                const outerA = (i * 2 * Math.PI / 5) - Math.PI / 2;
+                const innerA = outerA + Math.PI / 5;
+                ctx.lineTo(Math.cos(outerA) * 18, Math.sin(outerA) * 18);
+                ctx.lineTo(Math.cos(innerA) * 8, Math.sin(innerA) * 8);
             }
-            ctx.closePath();
-            ctx.fill();
-            ctx.restore();
+            ctx.closePath(); ctx.fill();
+            ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.stroke();
         } else if (this.shape === 'pulse') {
             const s = 10 + Math.sin(Date.now() * 0.02) * 5;
+            ctx.globalAlpha = 0.4;
+            ctx.beginPath(); ctx.arc(this.x, this.y, s + 6, 0, Math.PI * 2); ctx.fill();
+            ctx.globalAlpha = 1;
             ctx.beginPath(); ctx.arc(this.x, this.y, s, 0, Math.PI * 2); ctx.fill();
         } else if (this.shape === 'wave') {
-            ctx.save();
+            ctx.translate(this.x, this.y); ctx.rotate(angle);
+            ctx.beginPath(); ctx.moveTo(-10, -15); ctx.quadraticCurveTo(15, 0, -10, 15);
+            ctx.lineWidth = 6; ctx.strokeStyle = this.color; ctx.stroke();
+            ctx.globalAlpha = 0.3; ctx.lineWidth = 12; ctx.stroke();
+        } else if (this.shape === 'boulder') {
+            // Irregular rocky polygon
             ctx.translate(this.x, this.y);
-            ctx.rotate(angle);
+            ctx.rotate(Date.now() * 0.003);
             ctx.beginPath();
-            ctx.moveTo(-10, -15);
-            ctx.quadraticCurveTo(15, 0, -10, 15);
-            ctx.lineWidth = 6;
-            ctx.strokeStyle = this.color;
-            ctx.stroke();
-            ctx.restore();
-        } else {
+            const pts = 7;
+            for (let i = 0; i < pts; i++) {
+                const a = (i / pts) * Math.PI * 2;
+                const r = 12 + Math.sin(i * 2.3) * 5;
+                if (i === 0) ctx.moveTo(Math.cos(a) * r, Math.sin(a) * r);
+                else ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r);
+            }
+            ctx.closePath(); ctx.fillStyle = '#7f8c8d'; ctx.fill();
+            ctx.strokeStyle = '#5a5a5a'; ctx.lineWidth = 2; ctx.stroke();
+            // Crack lines
+            ctx.strokeStyle = '#444'; ctx.lineWidth = 1;
+            ctx.beginPath(); ctx.moveTo(-4, -6); ctx.lineTo(3, 2); ctx.lineTo(-1, 8); ctx.stroke();
+        } else if (this.shape === 'dart') {
+            // Thin pointed triangle
+            ctx.translate(this.x, this.y); ctx.rotate(angle);
+            ctx.beginPath();
+            ctx.moveTo(18, 0); ctx.lineTo(-8, -5); ctx.lineTo(-6, 0); ctx.lineTo(-8, 5);
+            ctx.closePath(); ctx.fill();
+            ctx.strokeStyle = 'rgba(255,255,255,0.5)'; ctx.lineWidth = 1; ctx.stroke();
+        } else if (this.shape === 'beam') {
+            // Long thin glowing line
+            ctx.translate(this.x, this.y); ctx.rotate(angle);
+            ctx.globalAlpha = 0.3;
+            ctx.fillRect(-40, -6, 80, 12);
+            ctx.globalAlpha = 0.7;
+            ctx.fillRect(-35, -3, 70, 6);
+            ctx.globalAlpha = 1;
+            ctx.fillRect(-30, -1.5, 60, 3);
+        } else if (this.shape === 'orb') {
+            // Spinning inner pattern orb
+            const t = Date.now() * 0.005;
+            ctx.globalAlpha = 0.2;
+            ctx.beginPath(); ctx.arc(this.x, this.y, 20, 0, Math.PI * 2); ctx.fill();
+            ctx.globalAlpha = 0.5;
             ctx.beginPath(); ctx.arc(this.x, this.y, 14, 0, Math.PI * 2); ctx.fill();
+            ctx.globalAlpha = 1;
+            ctx.beginPath(); ctx.arc(this.x, this.y, 8, 0, Math.PI * 2); ctx.fill();
+            // Inner spinning pattern
+            ctx.strokeStyle = this.color; ctx.lineWidth = 2; ctx.globalAlpha = 0.6;
+            for (let i = 0; i < 3; i++) {
+                const a = t + (i * Math.PI * 2 / 3);
+                ctx.beginPath();
+                ctx.arc(this.x + Math.cos(a) * 6, this.y + Math.sin(a) * 6, 3, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+        } else {
+            // Default circle (fireball, etc.)
+            ctx.globalAlpha = 0.3;
+            ctx.beginPath(); ctx.arc(this.x, this.y, 20, 0, Math.PI * 2); ctx.fill();
+            ctx.globalAlpha = 1;
+            ctx.beginPath(); ctx.arc(this.x, this.y, 14, 0, Math.PI * 2); ctx.fill();
+            // Fire particle trail
+            for (let i = 0; i < 3; i++) {
+                const ox = -this.vx * 0.02 * (i + 1) + (Math.random() - 0.5) * 10;
+                const oy = -this.vy * 0.02 * (i + 1) + (Math.random() - 0.5) * 10;
+                ctx.globalAlpha = 0.3 - i * 0.1;
+                ctx.beginPath(); ctx.arc(this.x + ox, this.y + oy, 8 - i * 2, 0, Math.PI * 2); ctx.fill();
+            }
         }
+        ctx.restore();
     }
 }
 
@@ -571,11 +795,15 @@ class Level {
                 }
             }
             if (e.type === 'enemy' && !e.dead) {
-                if (e.burnTimer > 0) { e.burnTimer -= dt; e.hp -= e.burnDamage * dt; if (e.hp <= 0) game.killEnemy(e); }
+                if (e.burnTimer > 0) { e.burnTimer -= dt; e.hp -= (e.burnDamage || 5) * dt; if (e.hp <= 0) game.killEnemy(e); }
                 if (e.slowTimer > 0) { e.slowTimer -= dt; }
                 if (e.fearTimer > 0) { e.fearTimer -= dt; }
                 if (e.weakenTimer > 0) { e.weakenTimer -= dt; }
                 if (e.rootTimer > 0) { e.rootTimer -= dt; }
+                if (e.petrifiedTimer > 0) { e.petrifiedTimer -= dt; }
+                if (e.blindTimer > 0) { e.blindTimer -= dt; }
+                if (e.cursedTimer > 0) { e.cursedTimer -= dt; }
+                if (e.poisonTimer > 0) { e.poisonTimer -= dt; e.hp -= (e.poisonDamage || 5) * dt; if (e.hp <= 0) game.killEnemy(e); }
 
                 let spd = 170;
                 if (e.enemyType === 'Wraith') spd = 270;
@@ -587,41 +815,166 @@ class Level {
                 if (e.frenzy) spd *= 1.8;
                 if (e.slowTimer > 0) spd *= 0.4;
                 if (e.fearTimer > 0) spd *= -1.2; // Run away
+                if (e.petrifiedTimer > 0) spd = 0; // Petrified = total stun
                 if (e.rootTimer > 0) spd = 0; // Rooted
+                // Blind: wander randomly instead of chasing
+                if (e.blindTimer > 0) {
+                    const blindAngle = Math.random() * Math.PI * 2;
+                    if (!this.isWall(e.x + Math.cos(blindAngle) * spd * dt, e.y)) e.x += Math.cos(blindAngle) * spd * 0.5 * dt;
+                    if (!this.isWall(e.x, e.y + Math.sin(blindAngle) * spd * dt)) e.y += Math.sin(blindAngle) * spd * 0.5 * dt;
+                    spd = 0; // Don't do normal movement
+                }
 
-                if (d < 450 && d > 45) {
-                    // Target nearest ally if closer than player
-                    let targetX = game.player.x, targetY = game.player.y;
-                    let targetDist = Math.hypot(game.player.x - e.x, game.player.y - e.y);
-                    this.entities.forEach((ent: any) => {
-                        if (ent.type === 'ally' && !ent.dead) {
-                            const dist = Math.hypot(ent.x - e.x, ent.y - e.y);
-                            if (dist < targetDist) { targetDist = dist; targetX = ent.x; targetY = ent.y; }
-                        }
-                    });
+                let target: any = player;
+                let targetDist = Math.hypot(player.x - e.x, player.y - e.y);
+                this.entities.forEach((ent: any) => {
+                    if ((ent.type === 'ally' || ent.type === 'enchanted_ally' || ent.type === 'mirror_image') && !ent.dead) {
+                        const dist = Math.hypot(ent.x - e.x, ent.y - e.y);
+                        if (dist < targetDist) { targetDist = dist; target = ent; }
+                    }
+                });
 
-                    const a = Math.atan2(targetY - e.y, targetX - e.x);
+                if (targetDist < 450 && targetDist > 45) {
+                    const a = Math.atan2(target.y - e.y, target.x - e.x);
                     if (!this.isWall(e.x + Math.cos(a) * spd * dt, e.y)) e.x += Math.cos(a) * spd * dt;
                     if (!this.isWall(e.x, e.y + Math.sin(a) * spd * dt)) e.y += Math.sin(a) * spd * dt;
 
                     // Cultist Ranged Attack
                     if (e.enemyType === 'Cultist' && !e.dead && Math.random() < 0.02) {
-                        game.projectiles.push(new Projectile(e.x, e.y, a, 'dark_missile', e, 15 + d * 2, '#30336b', 'pulse', 'weaken'));
+                        game.projectiles.push(new Projectile(e.x, e.y, a, 'dark_missile', e, 15 + targetDist * 0.1, '#30336b', 'pulse', 'weaken'));
                     }
                 }
+                
                 if (e.abilityCd > 0) e.abilityCd -= dt;
-                else if (d < 350) {
+                else if (targetDist < 350) {
                     if (e.enemyType === 'Ogre') {
-                        if (Math.random() < 0.5) { game.particles.push({ x: e.x, y: e.y, life: 0.5, type: 'explosion', color: '#8d6e63' }); if (d < 160) player.hp -= 35; game.log("Ogre Stomp!"); e.abilityCd = 5; }
-                        else { e.frenzy = true; setTimeout(() => e.frenzy = false, 1500); e.abilityCd = 6; game.log("Ogre Charges!"); }
+                        if (Math.random() < 0.5) { 
+                            game.particles.push({ x: e.x, y: e.y, life: 0.5, type: 'explosion', color: '#8d6e63' }); 
+                            if (targetDist < 160) {
+                                game.damageTarget(target, e, 35);
+                            }
+                            game.log("Ogre Stomp!"); e.abilityCd = 5; 
+                        } else { e.frenzy = true; setTimeout(() => e.frenzy = false, 1500); e.abilityCd = 6; game.log("Ogre Charges!"); }
                     } else if (e.enemyType === 'Lich') {
-                        if (Math.random() < 0.7) { game.projectiles.push(new Projectile(e.x, e.y, Math.atan2(player.y - e.y, player.x - e.x), 'shadowbolt', e, 25, '#9b59b6')); e.abilityCd = 3; }
-                        else { this.entities.push({ x: e.x + 50, y: e.y + 50, type: 'enemy', enemyType: 'Skeleton', hp: 60, maxHp: 60, dead: false, abilityCd: 2, baseColor: '#f1f2f6' }); game.log("Lich Summons!"); e.abilityCd = 9; }
+                        if (Math.random() < 0.7) { 
+                            game.projectiles.push(new Projectile(e.x, e.y, Math.atan2(target.y - e.y, target.x - e.x), 'shadowbolt', e, 25, '#9b59b6')); 
+                            e.abilityCd = 3; 
+                        } else { 
+                            this.entities.push({ x: e.x + 50, y: e.y + 50, type: 'enemy', enemyType: 'Skeleton', hp: 60, maxHp: 60, dead: false, abilityCd: 2, baseColor: '#f1f2f6' }); 
+                            game.log("Lich Summons!"); e.abilityCd = 9; 
+                        }
                     } else if (e.enemyType === 'Skeleton') { /* Skeleton has no ranged attack now */ }
-                    else if (e.enemyType === 'Wraith') { if (d < 110) { player.hp -= 12; e.hp = Math.min(e.maxHp, e.hp + 15); game.log("Soul Drain!"); e.abilityCd = 4; } else { e.x = player.x + Math.random() * 120 - 60; e.y = player.y + Math.random() * 120 - 60; e.abilityCd = 6; } }
+                    else if (e.enemyType === 'Wraith') { 
+                        if (targetDist < 110) { 
+                            game.damageTarget(target, e, 12);
+                            e.hp = Math.min(e.maxHp, e.hp + 15); game.log("Soul Drain!"); e.abilityCd = 4; 
+                        } else { 
+                            e.x = target.x + Math.random() * 120 - 60; e.y = target.y + Math.random() * 120 - 60; e.abilityCd = 6; 
+                        } 
+                    }
                     else if (e.enemyType === 'Ghoul') { e.frenzy = true; setTimeout(() => e.frenzy = false, 3000); e.abilityCd = 10; game.log("Ghoul Frenzy!"); }
                 }
-                if (d < 50 && Math.random() < 0.1) player.hp -= (e.frenzy ? 35 : 18) * dt;
+                
+                if (targetDist < 50 && Math.random() < 0.1) {
+                    game.damageTarget(target, e, (e.frenzy ? 35 : 18) * dt);
+                }
+            }
+
+            // Enchanted ally AI
+            if (e.type === 'enchanted_ally' && !e.dead) {
+                let nearest: any = null; let minDist = 600;
+                this.entities.forEach(other => {
+                    if (other.type === 'enemy' && !other.dead) {
+                        const d2 = Math.hypot(other.x - e.x, other.y - e.y);
+                        if (d2 < minDist) { minDist = d2; nearest = other; }
+                    }
+                });
+
+                let spd = 170;
+                if (e.enemyType === 'Wraith') spd = 270;
+                else if (e.enemyType === 'Ogre') spd = 130;
+                else if (e.enemyType === 'Slime') spd = 150;
+                else if (e.enemyType === 'Earth Golem') spd = 80;
+                else if (e.enemyType === 'Cultist') spd = 200;
+                if (e.frenzy) spd *= 1.8;
+
+                if (nearest) {
+                    const ang = Math.atan2(nearest.y - e.y, nearest.x - e.x);
+                    if (minDist > 45) {
+                        if (!this.isWall(e.x + Math.cos(ang) * spd * dt, e.y)) e.x += Math.cos(ang) * spd * dt;
+                        if (!this.isWall(e.x, e.y + Math.sin(ang) * spd * dt)) e.y += Math.sin(ang) * spd * dt;
+                    }
+
+                    // Ally Abilities
+                    if (e.abilityCd > 0) e.abilityCd -= dt;
+                    else if (minDist < 350) {
+                        if (e.enemyType === 'Ogre') {
+                            if (Math.random() < 0.5) { 
+                                game.particles.push({ x: e.x, y: e.y, life: 0.5, type: 'explosion', color: '#8d6e63' }); 
+                                if (minDist < 160) { nearest.hp -= 35; if (nearest.hp <= 0) game.killEnemy(nearest); }
+                                e.abilityCd = 5; 
+                            } else { e.frenzy = true; setTimeout(() => e.frenzy = false, 1500); e.abilityCd = 6; }
+                        } else if (e.enemyType === 'Lich') {
+                            if (Math.random() < 0.7) { 
+                                game.projectiles.push(new Projectile(e.x, e.y, ang, 'shadowbolt', e, 25, '#9b59b6')); 
+                                e.abilityCd = 3; 
+                            } else { 
+                                this.entities.push({ x: e.x + 50, y: e.y + 50, type: 'enchanted_ally', enemyType: 'Skeleton', hp: 60, maxHp: 60, dead: false, abilityCd: 2, baseColor: '#4caf50' }); 
+                                e.abilityCd = 9; 
+                            }
+                        } else if (e.enemyType === 'Cultist' && Math.random() < 0.05) {
+                            game.projectiles.push(new Projectile(e.x, e.y, ang, 'dark_missile', e, 15, '#30336b', 'pulse', 'weaken'));
+                            e.abilityCd = 1;
+                        } else if (e.enemyType === 'Wraith') { 
+                            if (minDist < 110) { 
+                                nearest.hp -= 12; if (nearest.hp <= 0) game.killEnemy(nearest);
+                                e.hp = Math.min(e.maxHp, e.hp + 15); e.abilityCd = 4; 
+                            } else { 
+                                e.x = nearest.x + Math.random() * 120 - 60; e.y = nearest.y + Math.random() * 120 - 60; e.abilityCd = 6; 
+                            } 
+                        } else if (e.enemyType === 'Ghoul') { e.frenzy = true; setTimeout(() => e.frenzy = false, 3000); e.abilityCd = 10; }
+                    }
+
+                    if (minDist < 50 && Math.random() < 0.1) {
+                        nearest.hp -= (e.frenzy ? 35 : 18) * dt;
+                        if (nearest.hp <= 0) game.killEnemy(nearest);
+                    }
+
+                } else {
+                    // Follow player if no enemies
+                    const ang = Math.atan2(game.player.y - e.y, game.player.x - e.x);
+                    const followDist = Math.hypot(game.player.x - e.x, game.player.y - e.y);
+                    if (followDist > 80) {
+                        if (!this.isWall(e.x + Math.cos(ang) * spd * dt, e.y)) e.x += Math.cos(ang) * spd * dt;
+                        if (!this.isWall(e.x, e.y + Math.sin(ang) * spd * dt)) e.y += Math.sin(ang) * spd * dt;
+                    }
+                }
+            }
+
+            // Mirror image AI
+            if (e.type === 'mirror_image' && !e.dead) {
+                e.lifeTimer -= dt;
+                if (e.lifeTimer <= 0) { e.dead = true; game.mirrorImage = null; game.log('Mirror Image fades...'); return; }
+                let nearest: any = null; let minDist = 600;
+                this.entities.forEach(other => {
+                    if (other.type === 'enemy' && !other.dead) {
+                        const d2 = Math.hypot(other.x - e.x, other.y - e.y);
+                        if (d2 < minDist) { minDist = d2; nearest = other; }
+                    }
+                });
+                if (nearest) {
+                    const ang = Math.atan2(nearest.y - e.y, nearest.x - e.x);
+                    if (minDist > 40) {
+                        if (!this.isWall(e.x + Math.cos(ang) * 280 * dt, e.y)) e.x += Math.cos(ang) * 280 * dt;
+                        if (!this.isWall(e.x, e.y + Math.sin(ang) * 280 * dt)) e.y += Math.sin(ang) * 280 * dt;
+                    } else {
+                        nearest.hp -= e.damage * dt; if (nearest.hp <= 0) game.killEnemy(nearest);
+                    }
+                } else {
+                    // Wander randomly
+                    const ang = Math.random() * Math.PI * 2;
+                    if (!this.isWall(e.x + Math.cos(ang) * 150 * dt, e.y)) e.x += Math.cos(ang) * 150 * dt;
+                }
             }
         });
     }
@@ -637,7 +990,7 @@ class Level {
         }
         this.entities.forEach(e => {
             if (this.fog[Math.floor(e.y / 64)][Math.floor(e.x / 64)] !== 2 || (e.dead && e.type !== 'corpse')) return;
-            if (e.type === 'enemy') {
+            if (e.type === 'enemy' || e.type === 'enchanted_ally') {
                 // Enhanced color fallback to prevent reverting to red
                 if (!e.baseColor) {
                     if (e.enemyType === 'Skeleton') e.baseColor = '#f1f2f6';
@@ -648,11 +1001,17 @@ class Level {
                     else if (e.enemyType === 'Lich') e.baseColor = '#a29bfe';
                     else e.baseColor = '#ff4757';
                 }
-                ctx.fillStyle = e.baseColor;
+                // Petrified: override color to gray stone
+                if (e.petrifiedTimer > 0) {
+                    ctx.fillStyle = '#6b6b6b';
+                } else {
+                    ctx.fillStyle = e.baseColor;
+                }
                 if (e.hp < e.maxHp) {
                     ctx.save();
                     ctx.fillStyle = '#000'; ctx.fillRect(e.x - 30, e.y - 55, 60, 9);
-                    ctx.fillStyle = '#f44336'; ctx.fillRect(e.x - 30, e.y - 55, (e.hp / e.maxHp) * 60, 9);
+                    ctx.fillStyle = e.type === 'enchanted_ally' ? '#4caf50' : '#f44336';
+                    ctx.fillRect(e.x - 30, e.y - 55, (e.hp / e.maxHp) * 60, 9);
                     ctx.restore();
                 }
 
@@ -661,7 +1020,36 @@ class Level {
                 if (e.fearTimer > 0) { ctx.strokeStyle = '#a29bfe'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(e.x, e.y, 40, 0, Math.PI * 2); ctx.stroke(); }
                 if (e.rootTimer > 0) { ctx.strokeStyle = '#7f8c8d'; ctx.lineWidth = 5; ctx.beginPath(); ctx.arc(e.x, e.y, 30, 0, Math.PI * 2); ctx.stroke(); }
                 if (e.burnTimer > 0) { ctx.strokeStyle = '#e67e22'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(e.x, e.y, 45, 0, Math.PI * 2); ctx.stroke(); }
+                if (e.poisonTimer > 0) { ctx.strokeStyle = '#27ae60'; ctx.lineWidth = 3; ctx.setLineDash([4, 4]); ctx.beginPath(); ctx.arc(e.x, e.y, 38, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]); }
+                if (e.blindTimer > 0) { ctx.strokeStyle = '#f5f6fa'; ctx.lineWidth = 2; ctx.setLineDash([8, 4]); ctx.beginPath(); ctx.arc(e.x, e.y, 42, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]); }
+                if (e.cursedTimer > 0) { ctx.strokeStyle = '#95afc0'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(e.x, e.y, 33, 0, Math.PI * 2); ctx.stroke(); }
+                // Petrified: stone cracks hexagonal outline
+                if (e.petrifiedTimer > 0) {
+                    ctx.strokeStyle = '#444'; ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    for (let i = 0; i < 6; i++) {
+                        const a = (i / 6) * Math.PI * 2;
+                        const px = e.x + Math.cos(a) * 32, py = e.y + Math.sin(a) * 32;
+                        if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+                    }
+                    ctx.closePath(); ctx.stroke();
+                    // Crack lines
+                    ctx.strokeStyle = '#555'; ctx.lineWidth = 1;
+                    ctx.beginPath(); ctx.moveTo(e.x - 8, e.y - 12); ctx.lineTo(e.x + 4, e.y); ctx.lineTo(e.x - 2, e.y + 10); ctx.stroke();
+                    ctx.beginPath(); ctx.moveTo(e.x + 6, e.y - 8); ctx.lineTo(e.x + 12, e.y + 6); ctx.stroke();
+                }
                 if (e.carriesKey) { ctx.fillStyle = '#f9ca24'; ctx.beginPath(); ctx.arc(e.x, e.y - 40, 6, 0, Math.PI * 2); ctx.fill(); }
+            } else if (e.type === 'mirror_image') {
+                // Draw as a translucent copy of the player
+                ctx.globalAlpha = 0.5;
+                ctx.fillStyle = e.color || '#f39c12'; ctx.beginPath(); ctx.arc(e.x, e.y, 25, 0, Math.PI * 2); ctx.fill();
+                ctx.strokeStyle = '#a29bfe'; ctx.lineWidth = 2; ctx.stroke();
+                ctx.globalAlpha = 1;
+                // HP bar
+                if (e.hp < e.maxHp) {
+                    ctx.fillStyle = '#000'; ctx.fillRect(e.x - 20, e.y - 40, 40, 5);
+                    ctx.fillStyle = '#a29bfe'; ctx.fillRect(e.x - 20, e.y - 40, (e.hp / e.maxHp) * 40, 5);
+                }
             } else if (e.type === 'npc') ctx.fillStyle = '#43a047';
             else if (e.type === 'item_drop') ctx.fillStyle = '#f9ca24';
             else if (e.isCorpse) ctx.fillStyle = '#3e2723';
@@ -713,12 +1101,21 @@ class Level {
 
 class Player {
     x: number; y: number; hp: number; maxHp: number; xp: number; level: number; gold: number; ac: number;
+    color: string = '#f39c12';
     manaShieldTimer: number = 0;
     portalCooldown: number = 0;
+    hasteTimer: number = 0;
+    etherealTimer: number = 0;
+    parryTimer: number = 0;
+    warCryTimer: number = 0;
+    skillPoints: number = 0;
+    unlockedSkills: Set<string> = new Set(['basic_attack']);
+    meleeSlots: { [key: string]: string | null } = { 'KeyQ': null, 'KeyF': null, 'KeyR': null, 'KeyV': null };
+    meleeCooldowns: { [key: string]: number } = {};
     equipment: { helmet: Item | null, chestplate: Item | null, leggings: Item | null, boots: Item | null, weapon: Item | null } = { helmet: null, chestplate: null, leggings: null, boots: null, weapon: null };
     inventory: (Item | null)[] = Array(20).fill(null);
     hotbar: (string | null)[] = ['magic_missile', null, null, null, null, null, null, null];
-    learnedSpells: Set<string> = new Set(['magic_missile', 'arcane_bolt']); cooldowns: { [key: string]: number } = {};
+    learnedSpells: Set<string> = new Set(['magic_missile']); cooldowns: { [key: string]: number } = {};
     swingTime: number = 0; swingAngle: number = 0;
     constructor(x: number, y: number) {
         this.x = x; this.y = y; this.hp = 100; this.maxHp = 100; this.xp = 0; this.level = 1; this.gold = 50; this.ac = 0;
@@ -761,8 +1158,43 @@ class Player {
             this.calculateAC();
         }
         game.hideTT();
-        game.renderInventory();
     }
+    unlockSkill(skillId: string, tree: 'melee' | 'spell', game: Game) {
+        const treeData = tree === 'melee' ? MELEE_SKILL_TREE : SPELL_SKILL_TREE;
+        const node = treeData[skillId];
+        if (!node) return;
+
+        // Validation
+        if (this.unlockedSkills.has(skillId)) return;
+        if (this.skillPoints < node.cost) { game.log("Not enough skill points!"); return; }
+        const hasReqs = node.requires.every(req => this.unlockedSkills.has(req));
+        if (!hasReqs) { game.log("Prerequisites not met!"); return; }
+
+        // Unlock
+        this.skillPoints -= node.cost;
+        this.unlockedSkills.add(skillId);
+        game.log(`Unlocked Skill: ${node.name}!`);
+        
+        // Assign if applicable
+        if (node.type === 'spell' && !this.learnedSpells.has(skillId)) {
+            if (SPELL_DB[skillId]) {
+                this.learnedSpells.add(skillId);
+                const empty = this.hotbar.indexOf(null);
+                if (empty !== -1) this.hotbar[empty] = skillId;
+            }
+        } else if (node.type === 'melee') {
+            const emptyKey = Object.keys(this.meleeSlots).find(k => this.meleeSlots[k] === null);
+            if (emptyKey) {
+                this.meleeSlots[emptyKey] = skillId;
+                game.updateHUD(); // Ensure UI updates
+            }
+        }
+
+        game.renderSkillTree(tree);
+    }
+
+
+
     unequip(t: string, game: Game) {
         const key = t as keyof Player['equipment'];
         const it = this.equipment[key];
@@ -780,7 +1212,12 @@ class Player {
             Object.keys(this.cooldowns).forEach(k => this.cooldowns[k] = 0);
         }
         if (this.portalCooldown > 0) this.portalCooldown -= dt;
+        if (this.hasteTimer > 0) this.hasteTimer -= dt;
+        if (this.etherealTimer > 0) this.etherealTimer -= dt;
+        if (this.parryTimer > 0) this.parryTimer -= dt;
+        if (this.warCryTimer > 0) this.warCryTimer -= dt;
         Object.keys(this.cooldowns).forEach(k => { if (this.cooldowns[k] > 0) this.cooldowns[k] -= dt; });
+        Object.keys(this.meleeCooldowns).forEach(k => { if (this.meleeCooldowns[k] > 0) this.meleeCooldowns[k] -= dt; });
         if (this.swingTime > 0) this.swingTime -= dt;
 
         let dx = 0, dy = 0;
@@ -788,7 +1225,10 @@ class Player {
         if (input.isDown('KeyS')) { dx++; dy++; }
         if (input.isDown('KeyA')) { dx--; dy++; }
         if (input.isDown('KeyD')) { dx++; dy--; }
-        if (dx !== 0 || dy !== 0) { const m = Math.hypot(dx, dy), mx = (dx / m) * 450 * dt, my = (dy / m) * 450 * dt; if (!level.isWall(this.x + mx, this.y)) this.x += mx; if (!level.isWall(this.x, this.y + my)) this.y += my; }
+        let moveSpeed = 450;
+        if (this.hasteTimer > 0) moveSpeed *= 1.8;
+        if (this.etherealTimer > 0) moveSpeed *= 2.2;
+        if (dx !== 0 || dy !== 0) { const m = Math.hypot(dx, dy), mx = (dx / m) * moveSpeed * dt, my = (dy / m) * moveSpeed * dt; if (!level.isWall(this.x + mx, this.y)) this.x += mx; if (!level.isWall(this.x, this.y + my)) this.y += my; }
 
         for (let i = 0; i < 8; i++) {
             if (input.isDown(`Digit${i + 1}`)) {
@@ -801,6 +1241,16 @@ class Player {
                 }
             }
         }
+
+        // --- MELEE ABILITY INPUT HANDLING ---
+        ['KeyQ', 'KeyF', 'KeyR', 'KeyV'].forEach(k => {
+            if (input.isDown(k)) {
+                const aId = this.meleeSlots[k];
+                if (aId && (!this.meleeCooldowns[aId] || this.meleeCooldowns[aId] <= 0)) {
+                    this.useMeleeAbility(aId, input, level, game);
+                }
+            }
+        });
 
         const lClick = input.consumeClick();
         const rClick = input.consumeClick(true);
@@ -863,9 +1313,10 @@ class Player {
         }
         if (this.xp >= this.level * 1000) {
             this.level++;
+            this.skillPoints++; // Grant Skill Point
             this.maxHp += 20;
             this.hp = this.maxHp;
-            game.log(`Level ${this.level}!`);
+            game.log(`Level ${this.level}! You gained a Skill Point!`);
             if (this.level === 3) {
                 const book = { ...ITEM_POOL['spellbook_fireball'] };
                 this.addItem(book);
@@ -874,7 +1325,25 @@ class Player {
         }
     }
     draw(ctx: CanvasRenderingContext2D, game: Game) {
-        ctx.fillStyle = '#f39c12'; ctx.beginPath(); ctx.arc(this.x, this.y, 25, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.stroke();
+        ctx.save();
+        // Ethereal form glow
+        if (this.etherealTimer > 0) {
+            ctx.globalAlpha = 0.3 + Math.sin(Date.now() * 0.01) * 0.15;
+            ctx.shadowBlur = 40; ctx.shadowColor = '#d1d8e0';
+            ctx.fillStyle = '#d1d8e0'; ctx.beginPath(); ctx.arc(this.x, this.y, 35, 0, Math.PI * 2); ctx.fill();
+            ctx.globalAlpha = 0.7;
+        }
+        // Haste speed lines
+        if (this.hasteTimer > 0) {
+            ctx.strokeStyle = '#81ecec'; ctx.lineWidth = 2; ctx.globalAlpha = 0.4;
+            for (let i = 0; i < 4; i++) {
+                const ox = (Math.random() - 0.5) * 30, oy = (Math.random() - 0.5) * 30;
+                ctx.beginPath(); ctx.moveTo(this.x + ox - 20, this.y + oy); ctx.lineTo(this.x + ox + 20, this.y + oy); ctx.stroke();
+            }
+            ctx.globalAlpha = 1;
+        }
+        ctx.fillStyle = this.color; ctx.beginPath(); ctx.arc(this.x, this.y, 25, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.stroke();
+        ctx.restore();
         if (this.swingTime > 0) {
             ctx.save();
             ctx.strokeStyle = `rgba(255, 255, 255, ${this.swingTime / 0.3})`;
@@ -888,6 +1357,222 @@ class Player {
             ctx.restore();
         }
     }
+
+    useMeleeAbility(id: string, input: InputHandler, level: Level, game: Game) {
+        const a = MELEE_ABILITY_DB[id];
+        if (!a) return;
+        this.meleeCooldowns[id] = a.cooldown;
+        
+        const m = input.mousePosWorld;
+        const angleToMouse = Math.atan2(m.y - this.y, m.x - this.x);
+
+        if (id === 'dash_strike') {
+            const dist = a.range;
+            let targetX = this.x; let targetY = this.y;
+            // Raycast dash to stop at walls
+            for (let i = 0; i < dist; i += 10) {
+                const nx = this.x + Math.cos(angleToMouse) * i;
+                const ny = this.y + Math.sin(angleToMouse) * i;
+                if (level.isWall(nx, ny)) break;
+                targetX = nx; targetY = ny;
+            }
+            
+            // Damage enemies in path
+            level.entities.forEach(e => {
+                if (e.type === 'enemy' && !e.dead) {
+                    const d = Math.hypot(e.x - this.x, e.y - this.y);
+                    const enemyAngle = Math.atan2(e.y - this.y, e.x - this.x);
+                    let diff = Math.abs(enemyAngle - angleToMouse);
+                    while (diff > Math.PI) diff = Math.abs(diff - 2 * Math.PI);
+                    if (d < dist && diff < 0.3) {
+                        let dmg = a.damage;
+                        if (this.warCryTimer > 0) dmg *= 1.5;
+                        e.hp -= dmg;
+                        game.particles.push({ x: e.x, y: e.y, life: 0.3, type: 'spark', color: a.color });
+                        if (e.hp <= 0) game.killEnemy(e);
+                    }
+                }
+            });
+            this.x = targetX; this.y = targetY;
+            game.particles.push({ x: this.x, y: this.y, life: 0.5, type: 'explosion', color: a.color });
+            game.log("Dash Strike!");
+        }
+        else if (id === 'ground_stomp') {
+            game.particles.push({ x: this.x, y: this.y, life: 0.6, type: 'star_fissure', color: a.color });
+            level.entities.forEach(e => {
+                if (e.type === 'enemy' && !e.dead && Math.hypot(this.x - e.x, this.y - e.y) < a.range) {
+                    let dmg = a.damage;
+                    if (this.warCryTimer > 0) dmg *= 1.5;
+                    e.hp -= dmg;
+                    e.petrifiedTimer = 2; // Stun for 2s
+                    e.rootTimer = 0; // Override root
+                    if (e.hp <= 0) game.killEnemy(e);
+                }
+            });
+            game.log("Ground Stomp!");
+        }
+        else if (id === 'bleed_slash') {
+            this.swingTime = 0.4;
+            this.swingAngle = angleToMouse;
+            game.particles.push({ x: this.x, y: this.y, life: 0.4, type: 'cone', color: a.color, angle: angleToMouse });
+            level.entities.forEach(e => {
+                if (e.type === 'enemy' && !e.dead) {
+                    const dist = Math.hypot(this.x - e.x, this.y - e.y);
+                    let diff = Math.abs(Math.atan2(e.y - this.y, e.x - this.x) - angleToMouse);
+                    if (diff > Math.PI) diff = 2 * Math.PI - diff;
+                    if (dist < a.range && diff < 0.8) {
+                        let dmg = a.damage;
+                        if (this.warCryTimer > 0) dmg *= 1.5;
+                        e.hp -= dmg;
+                        e.poisonTimer = 4; // Use poisonTimer for bleed
+                        e.poisonDamage = 15;
+                        game.particles.push({ x: e.x, y: e.y, life: 0.5, type: 'spark', color: a.color });
+                        if (e.hp <= 0) game.killEnemy(e);
+                    }
+                }
+            });
+            game.log("Bleed Slash!");
+        }
+        else if (id === 'whirlwind') {
+            this.swingTime = 0.6;
+            this.swingAngle = angleToMouse + Math.PI; // Full circle visual sweep implies spin
+            game.particles.push({ x: this.x, y: this.y, life: 0.5, type: 'explosion', color: a.color });
+            level.entities.forEach(e => {
+                if (e.type === 'enemy' && !e.dead && Math.hypot(this.x - e.x, this.y - e.y) < a.range) {
+                    let dmg = a.damage;
+                    if (this.warCryTimer > 0) dmg *= 1.5;
+                    e.hp -= dmg;
+                    game.particles.push({ x: e.x, y: e.y, life: 0.4, type: 'spark', color: '#fff' });
+                    if (e.hp <= 0) game.killEnemy(e);
+                }
+            });
+            game.log("Whirlwind!");
+        }
+        else if (id === 'shield_bash') {
+            game.particles.push({ x: this.x + Math.cos(angleToMouse)*30, y: this.y + Math.sin(angleToMouse)*30, life: 0.5, type: 'explosion', color: a.color });
+            level.entities.forEach(e => {
+                if (e.type === 'enemy' && !e.dead && Math.hypot(this.x - e.x, this.y - e.y) < a.range) {
+                    let diff = Math.abs(Math.atan2(e.y - this.y, e.x - this.x) - angleToMouse);
+                    if (diff > Math.PI) diff = 2 * Math.PI - diff;
+                    if (diff < 1.0) {
+                        let dmg = a.damage;
+                        if (this.warCryTimer > 0) dmg *= 1.5;
+                        e.hp -= dmg;
+                        const ka = Math.atan2(e.y - this.y, e.x - this.x);
+                        e.x += Math.cos(ka) * 250; e.y += Math.sin(ka) * 250;
+                        if (e.hp <= 0) game.killEnemy(e);
+                    }
+                }
+            });
+            game.log("Shield Bash!");
+        }
+        else if (id === 'leap_strike') {
+            let targetX = m.x; let targetY = m.y;
+            const dist = Math.hypot(m.x - this.x, m.y - this.y);
+            const actualDist = Math.min(dist, a.range);
+            targetX = this.x + Math.cos(angleToMouse) * actualDist;
+            targetY = this.y + Math.sin(angleToMouse) * actualDist;
+            
+            if (!level.isWall(targetX, targetY)) {
+                this.x = targetX; this.y = targetY;
+            }
+            game.particles.push({ x: this.x, y: this.y, life: 0.7, type: 'shockwave', color: a.color });
+            level.entities.forEach(e => {
+                if (e.type === 'enemy' && !e.dead && Math.hypot(this.x - e.x, this.y - e.y) < 200) {
+                    let dmg = a.damage;
+                    if (this.warCryTimer > 0) dmg *= 1.5;
+                    e.hp -= dmg;
+                    if (e.hp <= 0) game.killEnemy(e);
+                }
+            });
+            game.log("Leaping Strike!");
+        }
+        else if (id === 'execute') {
+            this.swingTime = 0.3;
+            this.swingAngle = angleToMouse;
+            let hits = 0;
+            level.entities.forEach(e => {
+                if (e.type === 'enemy' && !e.dead) {
+                    if (Math.hypot(this.x - e.x, this.y - e.y) < a.range) {
+                        let diff = Math.abs(Math.atan2(e.y - this.y, e.x - this.x) - angleToMouse);
+                        if (diff > Math.PI) diff = 2 * Math.PI - diff;
+                        if (diff < 0.6) {
+                            let dmg = a.damage;
+                            if (this.warCryTimer > 0) dmg *= 1.5;
+                            if (e.hp < e.maxHp * 0.3) dmg *= 4; // Execute bonus
+                            e.hp -= dmg;
+                            game.particles.push({ x: e.x, y: e.y, life: 0.5, type: 'spark', color: a.color });
+                            if (e.hp <= 0) game.killEnemy(e);
+                            hits++;
+                        }
+                    }
+                }
+            });
+            if (hits > 0) game.log("Execute!");
+        }
+        else if (id === 'parry') {
+            this.parryTimer = 1.0; // 1 second parry window
+            game.particles.push({ x: this.x, y: this.y, life: 1.0, type: 'shield_burst', color: a.color });
+            game.log("Parry Stance!");
+        }
+        else if (id === 'war_cry') {
+            this.warCryTimer = 5.0; // 5 seconds buff
+            for (let i = 0; i < 5; i++) {
+                setTimeout(() => {
+                    const runes = ['ᚱ', 'ᛏ', 'ᚢ', 'ᚨ', 'ᚲ', 'ᚷ'];
+                    game.particles.push({ x: this.x + (Math.random()-0.5)*80, y: this.y + (Math.random()-0.5)*80, life: 1.0, type: 'rune_float', color: a.color, runeChar: runes[Math.floor(Math.random()*runes.length)] });
+                }, i * 100);
+            }
+            level.entities.forEach(e => {
+                if (e.type === 'enemy' && !e.dead && Math.hypot(this.x - e.x, this.y - e.y) < a.range) {
+                    e.fearTimer = 3;
+                }
+            });
+            game.log("War Cry! Damage boosted!");
+        }
+        else if (id === 'hamstring') {
+            this.swingTime = 0.3;
+            this.swingAngle = angleToMouse;
+            level.entities.forEach(e => {
+                if (e.type === 'enemy' && !e.dead) {
+                    if (Math.hypot(this.x - e.x, this.y - e.y) < a.range) {
+                        let diff = Math.abs(Math.atan2(e.y - this.y, e.x - this.x) - angleToMouse);
+                        if (diff > Math.PI) diff = 2 * Math.PI - diff;
+                        if (diff < 0.8) {
+                            let dmg = a.damage;
+                            if (this.warCryTimer > 0) dmg *= 1.5;
+                            e.hp -= dmg;
+                            e.slowTimer = 4; // Slow
+                            game.particles.push({ x: e.x, y: e.y, life: 0.5, type: 'spark', color: a.color });
+                            if (e.hp <= 0) game.killEnemy(e);
+                        }
+                    }
+                }
+            });
+            game.log("Hamstring!");
+        }
+        else if (id === 'cleave') {
+            this.swingTime = 0.5;
+            this.swingAngle = angleToMouse;
+            game.particles.push({ x: this.x, y: this.y, life: 0.5, type: 'cone', color: a.color, angle: angleToMouse });
+            level.entities.forEach(e => {
+                if (e.type === 'enemy' && !e.dead) {
+                    if (Math.hypot(this.x - e.x, this.y - e.y) < a.range) {
+                        let diff = Math.abs(Math.atan2(e.y - this.y, e.x - this.x) - angleToMouse);
+                        if (diff > Math.PI) diff = 2 * Math.PI - diff;
+                        if (diff < 1.0) { // Wide arc
+                            let dmg = a.damage;
+                            if (this.warCryTimer > 0) dmg *= 1.5;
+                            e.hp -= dmg;
+                            game.particles.push({ x: e.x, y: e.y, life: 0.4, type: 'spark', color: '#fff' });
+                            if (e.hp <= 0) game.killEnemy(e);
+                        }
+                    }
+                }
+            });
+            game.log("Cleave!");
+        }
+    }
 }
 
 export class Game {
@@ -898,6 +1583,8 @@ export class Game {
     shadowStepState: { p1: { x: number, y: number } | null } = { p1: null };
     portals: Portal[] = [];
     isSandbox: boolean = false;
+    enchantedAlly: any = null;
+    mirrorImage: any = null;
     constructor(canvas: HTMLCanvasElement, sandbox = false) {
         this.canvas = canvas; this.ctx = canvas.getContext('2d')!;
         this.isSandbox = sandbox;
@@ -908,8 +1595,15 @@ export class Game {
         this.player = new Player(this.level.spawnX, this.level.spawnY);
         if (this.isSandbox) {
             this.player.gold = 999999;
-            this.log("SANDBOX MODE ACTIVE: Infinite items and free shopping!");
+            this.player.skillPoints = 99;
+            this.log("SANDBOX MODE ACTIVE: Infinite items, free shopping, and 99 SP!");
         }
+        // Unlock first spell tree node if not already
+        this.player.unlockedSkills.add('ignite'); 
+        this.player.learnedSpells.add('ignite');
+        const empty = this.player.hotbar.indexOf(null);
+        if (empty !== -1) this.player.hotbar[empty] = 'ignite';
+        
         this.setupUI();
         window.addEventListener('resize', () => {
             this.canvas.width = window.innerWidth;
@@ -928,11 +1622,13 @@ export class Game {
                 let closed = false;
                 if (document.getElementById('inventory-panel')?.style.display === 'block') { this.toggleInventory(false); closed = true; }
                 if (document.getElementById('interaction-panel')?.style.display === 'block') { this.closeInteraction(); closed = true; }
+                if (document.getElementById('skill-tree-panel')?.style.display === 'block') { this.toggleSkillTree(false); closed = true; }
 
                 if (!closed) { this.toggleGameMenu(); }
                 else if (document.getElementById('game-menu')?.style.display === 'block') { this.toggleGameMenu(false); }
             }
-            if (e.code === 'KeyI' && !this.isPaused) this.toggleInventory();
+            if (e.code === 'KeyI') this.toggleInventory();
+            if (e.code === 'KeyK') this.toggleSkillTree();
             if (e.code === 'KeyE' && !this.isPaused) { const mIdx = this.player.hotbar.indexOf('magic_missile'); if (mIdx !== -1) this.fireHotbarSpell(mIdx); }
             if (e.code === 'Space') {
                 this.isPaused = !this.isPaused;
@@ -945,7 +1641,125 @@ export class Game {
         document.getElementById('inventory-toggle')?.addEventListener('click', () => this.toggleInventory());
         document.getElementById('close-inventory')?.addEventListener('click', () => this.toggleInventory(false));
         document.getElementById('close-interaction')?.addEventListener('click', () => this.closeInteraction());
+        document.getElementById('close-skill-tree')?.addEventListener('click', () => this.toggleSkillTree(false));
         document.getElementById('restart-btn')?.addEventListener('click', () => location.reload());
+        
+        document.getElementById('tab-melee')?.addEventListener('click', () => this.renderSkillTree('melee'));
+        document.getElementById('tab-spell')?.addEventListener('click', () => this.renderSkillTree('spell'));
+    }
+    toggleSkillTree(show?: boolean) {
+        const p = document.getElementById('skill-tree-panel')!;
+        const isShowing = show !== undefined ? show : p.style.display === 'none';
+        p.style.display = isShowing ? 'flex' : 'none';
+        this.isPaused = isShowing;
+        if (isShowing) this.renderSkillTree('melee');
+    }
+    renderSkillTree(type: 'melee' | 'spell') {
+        const panel = document.getElementById('skill-tree-panel')!;
+        document.getElementById('tab-melee')?.classList.toggle('active', type === 'melee');
+        document.getElementById('tab-spell')?.classList.toggle('active', type === 'spell');
+        document.getElementById('skill-points-display')!.innerText = this.player.skillPoints.toString();
+        
+        const container = document.getElementById('skill-tree-container')!;
+        container.innerHTML = '<svg id="skill-connections"></svg>'; // Clear old content area and nodes
+        const svg = document.getElementById('skill-connections') as unknown as SVGSVGElement;
+        
+        const tree = type === 'melee' ? MELEE_SKILL_TREE : SPELL_SKILL_TREE;
+        
+        // 1. Precise Layout Parameters
+        const cellWidth = 120;
+        const cellHeight = 160;
+        const paddingLeft = 50;
+        const paddingTop = 50;
+        const nodeSize = 64;
+        const halfNode = nodeSize / 2;
+        
+        // 2. Calculate dynamic bounds
+        let maxX = 0; let maxY = 0;
+        Object.values(tree).forEach(n => {
+            maxX = Math.max(maxX, n.gridPos.x);
+            maxY = Math.max(maxY, n.gridPos.y);
+        });
+        
+        const contentWidth = maxX * cellWidth + paddingLeft * 2;
+        const contentHeight = maxY * cellHeight + paddingTop * 2;
+        
+        // Force container to be able to scroll and SVG to match
+        container.style.width = '100%';
+        container.style.height = '100%';
+        container.style.position = 'relative';
+        container.style.overflow = 'auto';
+        
+        // Inner dimensions of the scroll area
+        const contentArea = document.createElement('div');
+        contentArea.style.width = `${contentWidth}px`;
+        contentArea.style.height = `${contentHeight}px`;
+        contentArea.style.position = 'absolute';
+        contentArea.style.top = '0';
+        contentArea.style.left = '50%';
+        contentArea.style.transform = 'translateX(-50%)'; // Center horizontally
+        contentArea.className = 'skill-content-area';
+        container.appendChild(contentArea);
+        
+        svg.setAttribute("width", contentWidth.toString());
+        svg.setAttribute("height", contentHeight.toString());
+        svg.style.position = 'absolute';
+        svg.style.top = '0';
+        svg.style.left = '0';
+        svg.style.zIndex = '1';
+        contentArea.appendChild(svg);
+        
+        // 3. Draw connections
+        Object.values(tree).forEach(node => {
+            node.requires.forEach(reqId => {
+                const parent = tree[reqId];
+                if (parent) {
+                    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                    const startX = (parent.gridPos.x - 1) * cellWidth + paddingLeft + halfNode;
+                    const startY = (parent.gridPos.y - 1) * cellHeight + paddingTop + halfNode;
+                    const endX = (node.gridPos.x - 1) * cellWidth + paddingLeft + halfNode;
+                    const endY = (node.gridPos.y - 1) * cellHeight + paddingTop + halfNode;
+                    
+                    line.setAttribute("x1", startX.toString());
+                    line.setAttribute("y1", startY.toString());
+                    line.setAttribute("x2", endX.toString());
+                    line.setAttribute("y2", endY.toString());
+                    line.setAttribute("class", `skill-line ${this.player.unlockedSkills.has(node.id) ? 'active' : ''}`);
+                    svg.appendChild(line);
+                }
+            });
+        });
+
+        // 4. Render Nodes on top of SVG
+        Object.values(tree).forEach(node => {
+            const el = document.createElement('div');
+            const isUnlocked = this.player.unlockedSkills.has(node.id);
+            const canUnlock = !isUnlocked && (node.requires.length === 0 || node.requires.every(r => this.player.unlockedSkills.has(r)));
+            
+            el.className = `skill-node ${isUnlocked ? 'unlocked' : (canUnlock ? 'unlockable' : 'locked')}`;
+            el.style.position = 'absolute';
+            el.style.left = `${(node.gridPos.x - 1) * cellWidth + paddingLeft}px`;
+            el.style.top = `${(node.gridPos.y - 1) * cellHeight + paddingTop}px`;
+            el.style.zIndex = '10'; // Above SVG
+            
+            el.innerHTML = `
+                ${node.icon}
+                <div class="node-tooltip">
+                    <strong>${node.name}</strong><br>
+                    ${node.desc}
+                    <span class="node-cost">${isUnlocked ? 'UNLOCKED' : `Cost: ${node.cost} SP`}</span>
+                </div>
+            `;
+            
+            if (canUnlock) {
+                el.onclick = (e) => {
+                    e.stopPropagation();
+                    this.player.unlockSkill(node.id, type, this);
+                }
+            }
+            
+            contentArea.appendChild(el);
+        });
     }
     toggleGameMenu(s?: boolean) {
         const m = document.getElementById('game-menu')!;
@@ -985,28 +1799,173 @@ export class Game {
                             if (s.effect === 'burn') { e.burnTimer = 4; e.burnDamage = s.damage * 0.2; }
                             if (s.effect === 'fear') e.fearTimer = 3;
                             if (s.effect === 'root') e.rootTimer = 2;
+                            if (s.effect === 'poison') { e.poisonTimer = 5; e.poisonDamage = s.damage * 0.15; }
+                            if (s.effect === 'knockback') {
+                                const ka = Math.atan2(e.y - this.player.y, e.x - this.player.x);
+                                e.x += Math.cos(ka) * 200; e.y += Math.sin(ka) * 200;
+                            }
                             if (e.hp <= 0) this.killEnemy(e);
                         }
                     }
                 });
-            } else {
-                this.particles.push({ x: this.player.x, y: this.player.y, life: 0.5, type: 'explosion', color: s.color });
+            } else if (s.aoeType === 'line') {
+                // Line AOE: fissure from player toward cursor
+                this.particles.push({ x: this.player.x, y: this.player.y, life: 0.6, type: 'line_fissure', color: s.color, angle: a });
+                const lineLen = 400;
                 this.level.entities.forEach(e => {
-                    if (e.type === 'enemy' && !e.dead && Math.hypot(this.input.mousePosWorld.x - e.x, this.input.mousePosWorld.y - e.y) < 280) {
-                        e.hp -= s.damage;
-                        if (s.effect === 'slow') e.slowTimer = 4;
-                        if (s.effect === 'fear') e.fearTimer = 3;
-                        if (s.effect === 'weaken') e.weakenTimer = 5;
-                        if (s.effect === 'root') e.rootTimer = 2;
-                        if (e.hp <= 0) this.killEnemy(e);
+                    if (e.type === 'enemy' && !e.dead) {
+                        // Check if enemy is near the line
+                        const dx = e.x - this.player.x, dy = e.y - this.player.y;
+                        const proj = dx * Math.cos(a) + dy * Math.sin(a);
+                        const perp = Math.abs(-dx * Math.sin(a) + dy * Math.cos(a));
+                        if (proj > 0 && proj < lineLen && perp < 60) {
+                            e.hp -= s.damage;
+                            if (s.effect === 'root') e.rootTimer = 3;
+                            if (s.effect === 'knockback') {
+                                const ka = Math.atan2(e.y - this.player.y, e.x - this.player.x);
+                                e.x += Math.cos(ka + Math.PI/2) * 100; e.y += Math.sin(ka + Math.PI/2) * 100;
+                            }
+                            if (e.hp <= 0) this.killEnemy(e);
+                        }
                     }
                 });
+            } else if (s.aoeType === 'rain') {
+                // Rain AOE: multiple small projectiles fall over time in targeted area
+                const m = this.input.mousePosWorld;
+                const rainCount = 8;
+                for (let i = 0; i < rainCount; i++) {
+                    setTimeout(() => {
+                        const rx = m.x + (Math.random() - 0.5) * 200;
+                        const ry = m.y + (Math.random() - 0.5) * 200;
+                        this.particles.push({ x: rx, y: ry, life: 0.5, type: 'explosion', color: s.color });
+                        this.level.entities.forEach(e => {
+                            if (e.type === 'enemy' && !e.dead && Math.hypot(rx - e.x, ry - e.y) < 80) {
+                                e.hp -= s.damage / rainCount;
+                                if (s.effect === 'burn') { e.burnTimer = 3; e.burnDamage = s.damage * 0.1; }
+                                if (e.hp <= 0) this.killEnemy(e);
+                            }
+                        });
+                    }, i * 300);
+                }
+            } else {
+                // Reworked AOE types
+                const m = this.input.mousePosWorld;
+                
+                if (s.id === 'frost_nova') {
+                    // Frost Nova: 8-way directional ice burst
+                    for (let a = 0; a < Math.PI * 2; a += Math.PI / 4) {
+                        this.projectiles.push(new Projectile(this.player.x, this.player.y, a, 'ice_burst', this.player, s.damage, s.color, 'dart', s.effect));
+                    }
+                    this.particles.push({ x: this.player.x, y: this.player.y, life: 0.6, type: 'explosion', color: '#fff' });
+                }
+                else if (s.id === 'chaos_nova') {
+                    // Chaos Nova: Asynchronous chaos geysers
+                    const geyserCount = 5;
+                    for (let i = 0; i < geyserCount; i++) {
+                        setTimeout(() => {
+                            const rx = this.player.x + (Math.random() - 0.5) * 400;
+                            const ry = this.player.y + (Math.random() - 0.5) * 400;
+                            this.particles.push({ x: rx, y: ry, life: 1.0, type: 'chaos_geyser', color: s.color });
+                            this.level.entities.forEach(e => {
+                                if (e.type === 'enemy' && !e.dead && Math.hypot(rx - e.x, ry - e.y) < 100) {
+                                    e.hp -= s.damage;
+                                    e.weakenTimer = 5; // chaos weaken
+                                    if (e.hp <= 0) this.killEnemy(e);
+                                }
+                            });
+                        }, i * 150);
+                    }
+                }
+                else if (s.id === 'meteor_fall') {
+                    // Meteor Fall: Lingering Fire Crater
+                    this.particles.push({ x: m.x, y: m.y, life: 1.5, type: 'fire_crater', color: s.color });
+                    this.level.entities.forEach(e => {
+                        if (e.type === 'enemy' && !e.dead && Math.hypot(m.x - e.x, m.y - e.y) < 200) {
+                            e.hp -= s.damage;
+                            e.burnTimer = 4; e.burnDamage = s.damage * 0.2;
+                            if (e.hp <= 0) this.killEnemy(e);
+                        }
+                    });
+                }
+                else {
+                    // Default / Legacy Circle AOE (used by Nova Blast only now)
+                    let originX = this.player.x, originY = this.player.y;
+                    this.particles.push({ x: originX, y: originY, life: 0.5, type: 'explosion', color: s.color });
+                    this.level.entities.forEach(e => {
+                        if (e.type === 'enemy' && !e.dead && Math.hypot(originX - e.x, originY - e.y) < 280) {
+                            e.hp -= s.damage;
+                            if (s.effect === 'knockback') {
+                                const ka = Math.atan2(e.y - originY, e.x - originX);
+                                e.x += Math.cos(ka) * 200; e.y += Math.sin(ka) * 200;
+                            }
+                            if (e.hp <= 0) this.killEnemy(e);
+                        }
+                    });
+                }
             }
         }
         else if (s.type === 'buff') {
-            if (s.effect === 'regen') { this.player.hp = Math.min(this.player.maxHp, this.player.hp + s.damage); }
-            if (s.effect === 'haste') { /* Handled in spd naturally */ this.log("You feel faster!"); }
-            if (s.effect === 'shield') { this.player.ac += s.damage; setTimeout(() => this.player.ac -= s.damage, 10000); this.log("Armor hardened!"); }
+            if (s.effect === 'regen') {
+                this.player.hp = Math.min(this.player.maxHp, this.player.hp + s.damage);
+                this.particles.push({ x: this.player.x, y: this.player.y, life: 0.8, type: 'heal_burst', color: s.color });
+                this.log(`Healed for ${s.damage} HP!`);
+            }
+            if (s.effect === 'haste') {
+                if (s.id === 'ethereal_form') {
+                    // Ethereal Form: massive speed boost + ghostly invulnerability frames
+                    this.player.etherealTimer = 8;
+                    this.player.hasteTimer = 8;
+                    this.particles.push({ x: this.player.x, y: this.player.y, life: 1.2, type: 'ethereal_burst', color: '#d1d8e0' });
+                    this.log("ETHEREAL FORM! You phase through reality!");
+                } else if (s.id === 'chrono_warp') {
+                    // Chrono: haste + reset all cooldowns
+                    this.player.hasteTimer = 6;
+                    this.player.manaShieldTimer = 6;
+                    this.particles.push({ x: this.player.x, y: this.player.y, life: 0.8, type: 'chrono_burst', color: '#3498db' });
+                    this.log("TIME BENDS TO YOUR WILL!");
+                } else {
+                    // Wind Walk: normal haste
+                    this.player.hasteTimer = 8;
+                    this.particles.push({ x: this.player.x, y: this.player.y, life: 0.6, type: 'haste_burst', color: '#81ecec' });
+                    this.log("HASTE! You move with supernatural speed!");
+                }
+            }
+            if (s.effect === 'shield') {
+                this.player.ac += s.damage; setTimeout(() => this.player.ac -= s.damage, 10000);
+                this.particles.push({ x: this.player.x, y: this.player.y, life: 0.8, type: 'shield_burst', color: s.color });
+                this.log("Armor hardened!");
+            }
+            // Soul Harvest: lifesteal aura buff
+            if (s.effect === 'lifesteal' && s.id === 'soul_harvest') {
+                let hits = 0;
+                this.level.entities.forEach(e => {
+                    if (e.type === 'enemy' && !e.dead && Math.hypot(this.player.x - e.x, this.player.y - e.y) < 250) {
+                        e.hp -= s.damage; hits++;
+                        if (e.hp <= 0) this.killEnemy(e);
+                        this.particles.push({ x: e.x, y: e.y, life: 0.4, type: 'soul_drain', color: '#c0392b' });
+                    }
+                });
+                if (hits > 0) {
+                    const heal = hits * 15;
+                    this.player.hp = Math.min(this.player.maxHp, this.player.hp + heal);
+                    this.log(`Harvested ${hits} souls, restored ${heal} HP!`);
+                }
+            }
+            // Nova Blast: shockwave push
+            if (s.id === 'nova_blast') {
+                this.particles.push({ x: this.player.x, y: this.player.y, life: 0.8, type: 'shockwave', color: '#fdcb6e' });
+                this.level.entities.forEach(e => {
+                    if (e.type === 'enemy' && !e.dead) {
+                        const dist = Math.hypot(this.player.x - e.x, this.player.y - e.y);
+                        if (dist < 250) {
+                            e.hp -= s.damage;
+                            const ka = Math.atan2(e.y - this.player.y, e.x - this.player.x);
+                            e.x += Math.cos(ka) * 180; e.y += Math.sin(ka) * 180;
+                            if (e.hp <= 0) this.killEnemy(e);
+                        }
+                    }
+                });
+            }
         }
         else if (s.type === 'utility' && s.id === 'blink') { const dx = this.player.x + Math.cos(a) * s.damage, dy = this.player.y + Math.sin(a) * s.damage; if (!this.level.isWall(dx, dy)) { this.player.x = dx; this.player.y = dy; } }
         else if (s.type === 'utility' && s.id === 'shadow_step') {
@@ -1066,20 +2025,26 @@ export class Game {
             this.log(`CHAOS! Effect applied: ${eff}`);
         }
         else if (s.id === 'soul_harvest') {
-            const m = this.input.mousePosWorld;
-            let hits = 0;
-            this.level.entities.forEach(e => {
-                if (e.type === 'enemy' && !e.dead && Math.hypot(m.x - e.x, m.y - e.y) < 250) {
-                    e.hp -= s.damage; hits++;
-                    if (e.hp <= 0) this.killEnemy(e);
-                    this.particles.push({ x: e.x, y: e.y, life: 0.4, type: 'spark', color: '#c0392b' });
-                }
-            });
-            if (hits > 0) {
-                const heal = hits * 10;
-                this.player.hp = Math.min(this.player.maxHp, this.player.hp + heal);
-                this.log(`Harvested ${hits} souls, restored ${heal} HP!`);
-            }
+            // Handled in buff section above
+        }
+        else if (s.id === 'mirror_image') {
+            // Kill existing mirror image if any
+            if (this.mirrorImage) { this.mirrorImage.dead = true; this.mirrorImage = null; }
+            const mi = {
+                x: this.player.x + (Math.random() - 0.5) * 60,
+                y: this.player.y + (Math.random() - 0.5) * 60,
+                type: 'mirror_image' as const,
+                hp: this.player.maxHp * 0.3,
+                maxHp: this.player.maxHp * 0.3,
+                dead: false,
+                color: this.player.color,
+                damage: 15 + this.player.level * 3,
+                lifeTimer: 15
+            };
+            this.level.entities.push(mi as any);
+            this.mirrorImage = mi;
+            this.log("Mirror Image summoned!");
+            this.particles.push({ x: mi.x, y: mi.y, life: 0.5, type: 'spark', color: '#a29bfe' });
         }
         else if (s.id === 'electric_shield') {
             this.log("STATIC CHARGE ACTIVE!");
@@ -1290,6 +2255,21 @@ export class Game {
     }
     closeInteraction() { document.getElementById('interaction-panel')!.style.display = 'none'; this.activeInteractingEntity = null; this.toggleInventory(false); }
     log(m: string) { this.messageLog.unshift(m); if (this.messageLog.length > 10) this.messageLog.pop(); document.getElementById('log-content')!.innerHTML = this.messageLog.join('<br>'); }
+    damageTarget(target: any, source: any, dmg: number) {
+        if (target === this.player && this.player.parryTimer > 0) {
+            source.hp -= dmg * 3;
+            this.particles.push({x: source.x, y: source.y, life: 0.4, type: 'shield_burst', color: '#f1c40f'});
+            this.log("Parried! Counter-attack!");
+            if (source.hp <= 0 && source.type === 'enemy') this.killEnemy(source);
+            return;
+        }
+        target.hp -= dmg;
+        if (target !== this.player && target.hp <= 0) {
+            target.dead = true;
+            if (target === this.enchantedAlly) this.enchantedAlly = null;
+            if (target === this.mirrorImage) this.mirrorImage = null;
+        }
+    }
     killEnemy(e: any) {
         e.dead = true; this.player.xp += 200; this.log(`${e.enemyType} vanquished.`);
         if (e.enemyType === 'Slime' && !e.isSmall) {
@@ -1378,6 +2358,66 @@ export class Game {
             if (p.type === 'cone') {
                 this.ctx.save(); this.ctx.translate(p.x, p.y); this.ctx.rotate(p.angle); this.ctx.globalAlpha = p.life * 2;
                 this.ctx.beginPath(); this.ctx.moveTo(0, 0); this.ctx.arc(0, 0, 400, -0.6, 0.6); this.ctx.fill(); this.ctx.restore();
+            } else if (p.type === 'line_fissure') {
+                // Ground fissure line from origin toward angle
+                this.ctx.save();
+                this.ctx.translate(p.x, p.y); this.ctx.rotate(p.angle);
+                this.ctx.globalAlpha = p.life;
+                this.ctx.strokeStyle = p.color; this.ctx.lineWidth = 8;
+                this.ctx.beginPath(); this.ctx.moveTo(0, 0);
+                for (let j = 0; j < 6; j++) {
+                    this.ctx.lineTo(j * 70 + 35, (Math.random() - 0.5) * 20);
+                }
+                this.ctx.stroke();
+                // Wider glow
+                this.ctx.globalAlpha = p.life * 0.3; this.ctx.lineWidth = 24;
+                this.ctx.stroke();
+                this.ctx.restore();
+            } else if (p.type === 'star_fissure') {
+                this.ctx.save(); this.ctx.translate(p.x, p.y);
+                this.ctx.globalAlpha = p.life * 1.5;
+                this.ctx.strokeStyle = p.color; this.ctx.lineWidth = 6;
+                for (let a = 0; a < Math.PI * 2; a += Math.PI / 4) {
+                    this.ctx.beginPath(); this.ctx.moveTo(0, 0);
+                    let dist = (1 - p.life) * 200; // expand outwards
+                    this.ctx.lineTo(Math.cos(a) * dist, Math.sin(a) * dist);
+                    this.ctx.stroke();
+                }
+                this.ctx.restore();
+            } else if (p.type === 'rune_float') {
+                this.ctx.save(); this.ctx.translate(p.x, p.y);
+                this.ctx.globalAlpha = p.life;
+                this.ctx.fillStyle = p.color; this.ctx.font = '24px monospace';
+                this.ctx.textAlign = 'center'; this.ctx.textBaseline = 'middle';
+                // Float up slightly over time
+                const floatY = (1 - p.life) * -50;
+                this.ctx.fillText(p.runeChar || 'ᚱ', 0, floatY);
+                this.ctx.restore();
+            } else if (p.type === 'chaos_geyser') {
+                this.ctx.save(); this.ctx.translate(p.x, p.y);
+                this.ctx.globalAlpha = p.life;
+                this.ctx.fillStyle = p.color;
+                this.ctx.beginPath();
+                // Random spiky blob
+                for (let a = 0; a < Math.PI * 2; a += 0.5) {
+                    const r = 20 + Math.random() * 40 * (1 - p.life);
+                    const tx = Math.cos(a) * r, ty = Math.sin(a) * r;
+                    if (a === 0) this.ctx.moveTo(tx, ty); else this.ctx.lineTo(tx, ty);
+                }
+                this.ctx.closePath(); this.ctx.fill();
+                this.ctx.restore();
+            } else if (p.type === 'fire_crater') {
+                this.ctx.save(); this.ctx.translate(p.x, p.y);
+                this.ctx.globalAlpha = p.life;
+                this.ctx.fillStyle = '#111'; // scorched earth
+                this.ctx.beginPath(); this.ctx.arc(0, 0, 80, 0, Math.PI * 2); this.ctx.fill();
+                this.ctx.strokeStyle = p.color; this.ctx.lineWidth = 4;
+                for(let i=0; i<5; i++) {
+                    this.ctx.beginPath();
+                    this.ctx.arc((Math.random()-0.5)*40, (Math.random()-0.5)*40, 10 + Math.random()*20, 0, Math.PI*2);
+                    this.ctx.stroke();
+                }
+                this.ctx.restore();
             } else {
                 this.ctx.beginPath(); this.ctx.arc(p.x, p.y, p.type === 'explosion' ? (0.6 - p.life) * 180 : 6, 0, Math.PI * 2); this.ctx.fill();
             }
@@ -1404,6 +2444,32 @@ export class Game {
                 sl.onmouseleave = () => this.hideTT();
             } else { sl.innerText = ''; sl.onmouseenter = null; }
         }
+        // Update Melee Hotbar
+        ['KeyQ', 'KeyF', 'KeyR', 'KeyV'].forEach((k, i) => {
+            const sl = document.getElementById(`melee-slot-${i}`)!;
+            if (!sl) return;
+            const aId = p.meleeSlots[k];
+            if (aId) {
+                const a = MELEE_ABILITY_DB[aId];
+                sl.innerHTML = `<span class="item-icon">${a.icon}</span>`;
+                sl.style.opacity = p.meleeCooldowns[aId] > 0 ? '0.4' : '1';
+                sl.onmouseenter = ev => this.showMeleeTT(a, ev.clientX, ev.clientY);
+                sl.onmouseleave = () => this.hideTT();
+            } else {
+                sl.innerHTML = '';
+                sl.onmouseenter = null;
+            }
+        });
+    }
+    showMeleeTT(a: MeleeAbility, x: number, y: number) {
+        const tt = document.getElementById('game-tooltip')!; tt.style.display = 'block';
+        const realX = Math.min(x, window.innerWidth - 320);
+        let realY = y; if (realY + 220 > window.innerHeight) realY = window.innerHeight - 220;
+        tt.style.left = `${realX}px`; tt.style.top = `${realY}px`;
+        document.getElementById('tt-name')!.innerText = a.name; document.getElementById('tt-name')!.className = `rarity-dragon`;
+        document.getElementById('tt-type')!.innerText = `MELEE ABILITY`; document.getElementById('tt-desc')!.innerText = a.desc;
+        document.getElementById('tt-price')!.innerText = `Cooldown: ${a.cooldown}s`;
+        document.getElementById('tt-stats')!.innerText = `Damage: ${a.damage}`;
     }
     screenToWorld(mx: number, my: number) { const cx = this.canvas.width / 2, cy = this.canvas.height / 2; let x = mx - cx, y = (my - cy) / 0.7, a = -Math.PI / 4; const rx = x * Math.cos(a) - y * Math.sin(a), ry = x * Math.sin(a) + y * Math.cos(a); return { x: rx + this.player.x, y: ry + this.player.y }; }
 }

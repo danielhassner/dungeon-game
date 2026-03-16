@@ -91,7 +91,6 @@
 
       <!-- Overlays Core -->
       <div id="spell-hotbar">
-        <div class="hotbar-slot" data-slot="0"></div>
         <div class="hotbar-slot" data-slot="1"></div>
         <div class="hotbar-slot" data-slot="2"></div>
         <div class="hotbar-slot" data-slot="3"></div>
@@ -99,6 +98,14 @@
         <div class="hotbar-slot" data-slot="5"></div>
         <div class="hotbar-slot" data-slot="6"></div>
         <div class="hotbar-slot" data-slot="7"></div>
+        <div class="hotbar-slot" data-slot="8"></div>
+      </div>
+
+      <div id="melee-hotbar">
+        <div class="melee-slot" id="melee-slot-0" data-key="Q"></div>
+        <div class="melee-slot" id="melee-slot-1" data-key="F"></div>
+        <div class="melee-slot" id="melee-slot-2" data-key="R"></div>
+        <div class="melee-slot" id="melee-slot-3" data-key="V"></div>
       </div>
 
       <div id="game-tooltip" class="parchment tooltip" style="display: none;">
@@ -140,6 +147,23 @@
             <div id="slot-weapon" class="equip-slot" title="Weapon Slot" onclick="game.player.unequip('weapon', game)">
               ⚔️</div>
           </div>
+        </div>
+      </div>
+
+      <!-- Skill Tree Panel -->
+      <div id="skill-tree-panel" class="modal-panel parchment" style="display: none;">
+        <header>
+          <h3>Skill Tree</h3>
+          <button class="close-btn" id="close-skill-tree">X</button>
+        </header>
+        <div class="skill-tabs">
+          <button class="menu-btn stone-texture active" id="tab-melee">Melee Tree</button>
+          <button class="menu-btn stone-texture" id="tab-spell">Spell Tree</button>
+          <div class="sp-counter">Skill Points: <span id="skill-points-display">0</span></div>
+        </div>
+        <div id="skill-tree-container" class="skill-grid">
+          <svg id="skill-connections"></svg>
+          <!-- Populated dynamically -->
         </div>
       </div>
 
