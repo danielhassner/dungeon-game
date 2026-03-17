@@ -85,7 +85,7 @@
         </div>
         <div class="status-indicators">
           <span id="stat-depth">Depth: 1</span>
-          <span id="inventory-toggle" class="icon-btn" title="Inventory (I)">🎒</span>
+          <span id="inventory-toggle" class="icon-btn" title="Inventory (Tab)">🎒</span>
         </div>
       </div>
 
@@ -125,8 +125,8 @@
       </div>
 
       <!-- Inventory Panel -->
-      <div id="inventory-panel" class="parchment" style="display: none;">
-        <header>
+      <div id="inventory-panel" class="parchment draggable-window" style="display: none;">
+        <header class="drag-handle">
           <h3>Inventory</h3>
           <button class="close-btn" id="close-inventory">X</button>
         </header>
@@ -151,15 +151,15 @@
       </div>
 
       <!-- Skill Tree Panel -->
-      <div id="skill-tree-panel" class="modal-panel parchment" style="display: none;">
-        <header>
+      <div id="skill-tree-panel" class="modal-panel parchment draggable-window" style="display: none;">
+        <header class="drag-handle">
           <h3>Skill Tree</h3>
           <button class="close-btn" id="close-skill-tree">X</button>
         </header>
         <div class="skill-tabs">
-          <button class="menu-btn stone-texture active" id="tab-melee">Melee Tree</button>
-          <button class="menu-btn stone-texture" id="tab-spell">Spell Tree</button>
-          <button class="menu-btn stone-texture" id="tab-quest-view">Active Quest</button>
+          <button class="menu-btn stone-texture skill-tab active" id="tab-melee">Melee Tree</button>
+          <button class="menu-btn stone-texture skill-tab" id="tab-spell">Spell Tree</button>
+          <button class="menu-btn stone-texture skill-tab" id="tab-quest-view">Active Quest</button>
           <div class="sp-counter">Skill Points: <span id="skill-points-display">0</span></div>
         </div>
         <div id="skill-tree-container" class="skill-grid">
@@ -171,12 +171,12 @@
         </div>
       </div>
 
-      <div id="interaction-panel" class="modal-panel parchment" style="display:none;">
+      <div id="interaction-panel" class="modal-panel parchment draggable-window" style="display:none;">
         <button id="close-interaction" class="close-btn">&times;</button>
 
         <!-- Shop Interface -->
         <div id="shop-ui" style="display:none;">
-          <h2 class="panel-header shop-header">💰 MERCHANDISE 💰</h2>
+          <h2 class="panel-header shop-header drag-handle">💰 MERCHANDISE 💰</h2>
           <div class="shop-info">
             <span id="merchant-name">Master Merchant</span>
             <div class="gold-balance">Your Gold: <span id="shop-gold-count">0</span></div>
@@ -186,7 +186,7 @@
 
         <!-- Merchant Dialogue Interface -->
         <div id="dialogue-ui" style="display:none;">
-          <h2 class="panel-header merchant-header">📜 A GRIM TALE 📜</h2>
+          <h2 class="panel-header merchant-header drag-handle">📜 A GRIM TALE 📜</h2>
           <div class="dialogue-container parchment">
             <p id="dialogue-text">"Welcome, seeker of relics..."</p>
           </div>
@@ -216,13 +216,23 @@
 
         <!-- Loot Interface -->
         <div id="loot-ui" style="display:none;">
-          <h2 class="panel-header loot-header">📦 DUNGEON CACHE 📦</h2>
+          <h2 class="panel-header loot-header drag-handle">📦 DUNGEON CACHE 📦</h2>
           <div class="loot-info">Searching the remains...</div>
           <div id="loot-content" class="grid-layout"></div>
         </div>
       </div>
 
-      <div id="game-menu" class="modal-panel parchment" style="display: none;">
+      <div id="map-panel" class="modal-panel parchment draggable-window" style="display:none;">
+        <header class="drag-handle">
+          <h3>Level Map</h3>
+          <button class="close-btn" id="close-map">X</button>
+        </header>
+        <div class="map-container">
+          <canvas id="map-canvas"></canvas>
+        </div>
+      </div>
+
+      <div id="game-menu" class="modal-panel parchment draggable-window" style="display: none;">
         <h2 class="panel-header">QUEST MENU</h2>
         <div class="menu-content">
           <button id="resume-btn" class="menu-btn stone-texture">RESUME QUEST</button>
@@ -234,6 +244,11 @@
         <h1 class="death-title">YOU HAVE PERISHED</h1>
         <p id="death-stats">Level 1 | XP: 0</p>
         <button id="restart-btn" class="menu-btn stone-texture">RESTART ODYSSEY</button>
+      </div>
+
+      <!-- Mini Map -->
+      <div id="mini-map-container" class="parchment">
+        <canvas id="mini-map-canvas"></canvas>
       </div>
     </div>
   </div>

@@ -1728,7 +1728,13 @@ class Player {
 }
 
 export class Game {
-    canvas: HTMLCanvasElement; ctx: CanvasRenderingContext2D; lastTime = 0; player: Player; level!: Level; camera: Camera; input: InputHandler; projectiles: Projectile[] = []; particles: any[] = []; fieldEffects: FieldEffect[] = []; isPaused = false; isGameOver = false; currentDepth = 1; levels: Map<number, Level> = new Map(); messageLog: string[] = ["Grand Expansion Initialized..."]; activeInteractingEntity: any = null; bufferedSpellSlot: number | null = null; selectedInvIdx: number | null = null;
+    canvas: HTMLCanvasElement; ctx: CanvasRenderingContext2D; lastTime = 0; player: Player; level!: Level; camera: Camera; input: InputHandler; projectiles: Projectile[] = []; particles: any[] = []; fieldEffects: FieldEffect[] = []; isPaused = false;    isGameOver = false;
+    mapZoom = 1;
+    mapOffset = { x: 0, y: 0 };
+    mapPins: { x: number, y: number }[] = [];
+    isPanningMap = false;
+    lastMousePos = { x: 0, y: 0 };
+ currentDepth = 1; levels: Map<number, Level> = new Map(); messageLog: string[] = ["Grand Expansion Initialized..."]; activeInteractingEntity: any = null; bufferedSpellSlot: number | null = null; selectedInvIdx: number | null = null;
     depthsWithVaults: Set<number> = new Set();
     activeMerchant: any = null;
     currentDialogue: string = "";
@@ -1778,12 +1784,19 @@ export class Game {
                 if (document.getElementById('inventory-panel')?.style.display !== 'none') { this.toggleInventory(false); closed = true; }
                 if (document.getElementById('interaction-panel')?.style.display !== 'none') { this.closeInteraction(); closed = true; }
                 if (document.getElementById('skill-tree-panel')?.style.display !== 'none') { this.toggleSkillTree(false); closed = true; }
+                if (document.getElementById('map-panel')?.style.display !== 'none') { this.toggleMap(false); closed = true; }
 
                 if (!closed) { this.toggleGameMenu(); }
                 else if (document.getElementById('game-menu')?.style.display === 'block') { this.toggleGameMenu(false); }
             }
-            if (e.code === 'KeyI') this.toggleInventory();
-            if (e.code === 'KeyK') this.toggleSkillTree();
+            if (e.code === 'Tab') {
+                e.preventDefault();
+                this.toggleInventory();
+            }
+            if (e.key.toLowerCase() === 'm') {
+                e.preventDefault();
+                this.toggleMap();
+            }
             if (e.code === 'KeyE' && !this.isPaused) { const mIdx = this.player.hotbar.indexOf('magic_missile'); if (mIdx !== -1) this.fireHotbarSpell(mIdx); }
             if (e.code === 'Space') {
                 this.isPaused = !this.isPaused;
@@ -1797,11 +1810,349 @@ export class Game {
         document.getElementById('close-inventory')?.addEventListener('click', () => this.toggleInventory(false));
         document.getElementById('close-interaction')?.addEventListener('click', () => this.closeInteraction());
         document.getElementById('close-skill-tree')?.addEventListener('click', () => this.toggleSkillTree(false));
+        document.getElementById('close-map')?.addEventListener('click', () => this.toggleMap(false));
         document.getElementById('restart-btn')?.addEventListener('click', () => location.reload());
         
         document.getElementById('tab-melee')?.addEventListener('click', () => this.switchSkillTab('melee'));
         document.getElementById('tab-spell')?.addEventListener('click', () => this.switchSkillTab('spell'));
         document.getElementById('tab-quest-view')?.addEventListener('click', () => this.switchSkillTab('quest'));
+        
+        const mapCanvas = document.getElementById('map-canvas') as HTMLCanvasElement;
+        mapCanvas?.addEventListener('mousedown', (e) => this.handleMapMouseDown(e));
+        window.addEventListener('mousemove', (e) => this.handleMapMouseMove(e));
+        window.addEventListener('mouseup', () => this.handleMapMouseUp());
+        mapCanvas?.addEventListener('contextmenu', (e) => this.handleMapContextMenu(e));
+        document.getElementById('map-panel')?.addEventListener('wheel', (e) => this.handleMapZoom(e as WheelEvent), { passive: false });
+
+        this.setupDraggableWindows();
+    }
+    toggleMap(show?: boolean) {
+        const p = document.getElementById('map-panel');
+        if (!p) return;
+        const isShowing = show !== undefined ? show : p.style.display === 'none' || p.style.display === '';
+        p.style.display = isShowing ? 'flex' : 'none';
+        this.isPaused = isShowing;
+        if (isShowing) {
+            console.log('Map opening...');
+            this.renderMap();
+        }
+    }
+    handleMapZoom(e: WheelEvent) {
+        e.preventDefault();
+        const delta = e.deltaY > 0 ? 0.9 : 1.1;
+        this.mapZoom = Math.max(0.5, Math.min(5, this.mapZoom * delta));
+        this.renderMap();
+    }
+    handleMapMouseDown(e: MouseEvent) {
+        if (e.button === 0) { // Left click for panning
+            this.isPanningMap = true;
+            this.lastMousePos = { x: e.clientX, y: e.clientY };
+        }
+    }
+    handleMapMouseMove(e: MouseEvent) {
+        if (this.isPanningMap) {
+            const dx = e.clientX - this.lastMousePos.x;
+            const dy = e.clientY - this.lastMousePos.y;
+            this.mapOffset.x += dx;
+            this.mapOffset.y += dy;
+            this.lastMousePos = { x: e.clientX, y: e.clientY };
+            this.renderMap();
+        }
+    }
+    handleMapMouseUp() {
+        this.isPanningMap = false;
+    }
+    handleMapContextMenu(e: MouseEvent) {
+        e.preventDefault();
+        const canvas = e.target as HTMLCanvasElement;
+        const rect = canvas.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+
+        const isoScaleY = 0.7;
+        const isoRotate = Math.PI / 4;
+        const diagonalPoints = this.level.width + this.level.height;
+        const baseScale = Math.min(
+            (canvas.width * 0.9) / (diagonalPoints * 0.707),
+            (canvas.height * 0.9) / (diagonalPoints * 0.707 * isoScaleY)
+        );
+        const tileSize = baseScale * this.mapZoom;
+
+        // Correct Reverse Math:
+        // 1. Center the mouse relative to canvas center + mapOffset
+        let x = mouseX - (canvas.width / 2 + this.mapOffset.x);
+        let y = mouseY - (canvas.height / 2 + this.mapOffset.y);
+        
+        // 2. Reverse ISO Scale
+        y /= isoScaleY;
+        
+        // 3. Reverse Rotation
+        const rx = x * Math.cos(-isoRotate) - y * Math.sin(-isoRotate);
+        const ry = x * Math.sin(-isoRotate) + y * Math.cos(-isoRotate);
+        
+        // 4. Reverse Grid Translation
+        const gridX = (rx + (this.level.width * tileSize / 2)) / tileSize;
+        const gridY = (ry + (this.level.height * tileSize / 2)) / tileSize;
+
+        if (gridX >= 0 && gridX < this.level.width && gridY >= 0 && gridY < this.level.height) {
+            const gx = Math.floor(gridX);
+            const gy = Math.floor(gridY);
+            
+            const existingPinIdx = this.mapPins.findIndex(p => p.x === gx && p.y === gy);
+            if (existingPinIdx !== -1) {
+                this.mapPins.splice(existingPinIdx, 1);
+            } else {
+                this.mapPins.push({x: gx, y: gy});
+            }
+            this.renderMap();
+        }
+    }
+    renderMap() {
+        const canvas = document.getElementById('map-canvas') as HTMLCanvasElement;
+        const container = canvas?.parentElement;
+        if (!canvas || !container || !this.level) return;
+        
+        const ctx = canvas.getContext('2d')!;
+        const level = this.level;
+        if (!level.width || !level.height || !level.fog || !level.tiles) return;
+
+        // Fit canvas to container
+        canvas.width = container.clientWidth;
+        canvas.height = container.clientHeight;
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Map transformation settings
+        const isoRotate = Math.PI / 4;
+        const isoScaleY = 0.7;
+
+        // Calculate dynamic tile size to fit the level
+        const diagonalPoints = level.width + level.height;
+        const scale = Math.min(
+            (canvas.width * 0.9) / (diagonalPoints * 0.707),
+            (canvas.height * 0.9) / (diagonalPoints * 0.707 * isoScaleY)
+        );
+        const tileSize = scale * this.mapZoom;
+
+        ctx.save();
+        // Center the whole level + Apply Drag Offset
+        ctx.translate(canvas.width / 2 + this.mapOffset.x, canvas.height / 2 + this.mapOffset.y);
+        ctx.scale(1, isoScaleY);
+        ctx.rotate(isoRotate);
+        
+        // Offset to align (0,0) so the entire grid is centered
+        ctx.translate(-level.width * tileSize / 2, -level.height * tileSize / 2);
+
+        // Render tiles
+        for (let y = 0; y < level.height; y++) {
+            for (let x = 0; x < level.width; x++) {
+                if (level.fog[y][x] > 0) {
+                    const tile = level.tiles[y][x];
+                    // Walls/Doors
+                    if (tile === 1 || tile === 2) {
+                        ctx.fillStyle = '#444'; 
+                    } else {
+                        ctx.fillStyle = '#c2b280'; // Floor
+                    }
+                    // Draw tile slightly overlapping to avoid gaps
+                    ctx.fillRect(x * tileSize - 0.5, y * tileSize - 0.5, tileSize + 1, tileSize + 1);
+                    
+                    // Add subtle border to floors for definition
+                    if (tile !== 1 && tile !== 2) {
+                        ctx.strokeStyle = 'rgba(0,0,0,0.05)';
+                        ctx.strokeRect(x * tileSize, y * tileSize, tileSize, tileSize);
+                    }
+                }
+            }
+        }
+
+        // Enlarged Marker sizes
+        const markerSize = Math.max(tileSize * 1.5, 12);
+
+        // Render special entities if explored
+        level.entities.forEach(e => {
+            const ex = Math.floor(e.x / 64);
+            const ey = Math.floor(e.y / 64);
+            if (level.fog[ey] && level.fog[ey][ex] > 0) {
+                if (e.type === 'stairs-down') {
+                    ctx.fillStyle = '#ff4757';
+                    ctx.fillRect(ex * tileSize - markerSize/4, ey * tileSize - markerSize/4, tileSize + markerSize/2, tileSize + markerSize/2);
+                } else if (e.type === 'stairs-up') {
+                    ctx.fillStyle = '#2f3542';
+                    ctx.fillRect(ex * tileSize - markerSize/4, ey * tileSize - markerSize/4, tileSize + markerSize/2, tileSize + markerSize/2);
+                } else if (e.type === 'chest' && !e.dead) {
+                    ctx.fillStyle = '#ffa502';
+                    ctx.fillRect(ex * tileSize + 1, ey * tileSize + 1, tileSize - 2, tileSize - 2);
+                    // Glowing effect for chests
+                    ctx.shadowBlur = 10;
+                    ctx.shadowColor = '#ffa502';
+                    ctx.strokeRect(ex * tileSize, ey * tileSize, tileSize, tileSize);
+                    ctx.shadowBlur = 0;
+                } else if (e.type === 'npc') {
+                    ctx.fillStyle = '#3742fa';
+                    ctx.fillRect(ex * tileSize + 1, ey * tileSize + 1, tileSize - 2, tileSize - 2);
+                } else if (e.type === 'enemy' && !e.dead) {
+                    ctx.fillStyle = '#ff4757';
+                    ctx.beginPath();
+                    ctx.arc(ex * tileSize + tileSize/2, ey * tileSize + tileSize/2, tileSize/3, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+        });
+
+        // Render Pins
+        this.mapPins.forEach(p => {
+            ctx.fillStyle = '#3498db';
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = '#3498db';
+            ctx.beginPath();
+            ctx.moveTo(p.x * tileSize + tileSize/2, p.y * tileSize);
+            ctx.lineTo(p.x * tileSize + tileSize, p.y * tileSize + tileSize);
+            ctx.lineTo(p.x * tileSize, p.y * tileSize + tileSize);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+        });
+
+        // Render player (Green dot)
+        const px = this.player.x / 64;
+        const py = this.player.y / 64;
+        
+        ctx.fillStyle = '#2ed573';
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = '#2ed573';
+        ctx.beginPath();
+        ctx.arc(px * tileSize, py * tileSize, markerSize / 2, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Player direction indicator
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(px * tileSize, py * tileSize);
+        ctx.lineTo(px * tileSize + Math.cos(-Math.PI/4) * markerSize, py * tileSize + Math.sin(-Math.PI/4) * markerSize);
+        ctx.stroke();
+
+        ctx.restore();
+    }
+    renderMiniMap() {
+        const canvas = document.getElementById('mini-map-canvas') as HTMLCanvasElement;
+        if (!canvas || !this.level) return;
+        const ctx = canvas.getContext('2d')!;
+        const level = this.level;
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        const tileSize = 16; // Increased size for better clarity
+        const radius = 12; // Larger radius as requested
+        const px = this.player.x / 64;
+        const py = this.player.y / 64;
+
+        ctx.save();
+        ctx.translate(canvas.width/2, canvas.height/2);
+        
+        // Subtle isometric look but less "condensed"
+        ctx.scale(1, 0.8); 
+        ctx.rotate(Math.PI / 4);
+        
+        ctx.translate(-px * tileSize, -py * tileSize);
+
+        const startX = Math.max(0, Math.floor(px - radius));
+        const endX = Math.min(level.width, Math.ceil(px + radius));
+        const startY = Math.max(0, Math.floor(py - radius));
+        const endY = Math.min(level.height, Math.ceil(py + radius));
+
+        for (let y = startY; y < endY; y++) {
+            for (let x = startX; x < endX; x++) {
+                if (level.fog[y][x] > 0) {
+                    const tile = level.tiles[y][x];
+                    ctx.fillStyle = (tile === 1 || tile === 2) ? '#3d2e1e' : '#d2c290';
+                    ctx.fillRect(x * tileSize, y * tileSize, tileSize + 0.5, tileSize + 0.5);
+                }
+            }
+        }
+
+        level.entities.forEach(e => {
+            const ex = e.x / 64;
+            const ey = e.y / 64;
+            if (ex >= startX && ex <= endX && ey >= startY && ey <= endY) {
+                if (level.fog[Math.floor(ey)] && level.fog[Math.floor(ey)][Math.floor(ex)] > 0) {
+                    if (e.type === 'enemy' && !e.dead) ctx.fillStyle = '#ff4757';
+                    else if (e.type === 'chest' && !e.dead) ctx.fillStyle = '#ffa502';
+                    else if (e.type === 'stairs-down') ctx.fillStyle = '#ff4757';
+                    else if (e.type === 'stairs-up') ctx.fillStyle = '#2f3542';
+                    else return;
+                    
+                    ctx.beginPath();
+                    ctx.arc(ex * tileSize, ey * tileSize, 5, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+        });
+
+        // Player icon
+        ctx.fillStyle = '#2ed573';
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(px * tileSize, py * tileSize, 6, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.restore();
+    }
+    setupDraggableWindows() {
+        let isDragging = false;
+        let draggedEl: HTMLElement | null = null;
+        let startX = 0;
+        let startY = 0;
+        let initialX = 0;
+        let initialY = 0;
+
+        const onMouseDown = (e: MouseEvent) => {
+            const handle = (e.target as HTMLElement).closest('.drag-handle');
+            if (!handle) return;
+            
+            draggedEl = handle.closest('.draggable-window') as HTMLElement;
+            if (!draggedEl) return;
+
+            isDragging = true;
+            startX = e.clientX;
+            startY = e.clientY;
+
+            const rect = draggedEl.getBoundingClientRect();
+            initialX = rect.left;
+            initialY = rect.top;
+
+            // Reset dynamic positioning to absolute pixel values
+            draggedEl.style.position = 'fixed';
+            draggedEl.style.left = `${initialX}px`;
+            draggedEl.style.top = `${initialY}px`;
+            draggedEl.style.transform = 'none';
+            draggedEl.style.margin = '0';
+            
+            // Bring to front
+            document.querySelectorAll('.draggable-window').forEach(el => (el as HTMLElement).style.zIndex = '1000');
+            draggedEl.style.zIndex = '3000';
+        };
+
+        const onMouseMove = (e: MouseEvent) => {
+            if (!isDragging || !draggedEl) return;
+            
+            const dx = e.clientX - startX;
+            const dy = e.clientY - startY;
+            
+            draggedEl.style.left = `${initialX + dx}px`;
+            draggedEl.style.top = `${initialY + dy}px`;
+        };
+
+        const onMouseUp = () => {
+            isDragging = false;
+            draggedEl = null;
+        };
+
+        window.addEventListener('mousedown', onMouseDown);
+        window.addEventListener('mousemove', onMouseMove);
+        window.addEventListener('mouseup', onMouseUp);
     }
     toggleSkillTree(show?: boolean) {
         const p = document.getElementById('skill-tree-panel')!;
@@ -2248,9 +2599,11 @@ export class Game {
     toggleInventory(s?: boolean) {
         const p = document.getElementById('inventory-panel')!;
         const side = document.querySelector('.sidebar-right') as HTMLElement;
+        const main = document.getElementById('main-container') || document.body;
         const sp = (s === undefined ? p.style.display === 'none' : s);
         p.style.display = sp ? 'block' : 'none';
         if (side) side.classList.toggle('visible', sp);
+        main.classList.toggle('inventory-active', sp);
         if (sp) this.renderInventory();
     }
     renderInventory() {
@@ -2732,7 +3085,10 @@ export class Game {
                 this.ctx.beginPath(); this.ctx.arc(p.x, p.y, p.type === 'explosion' ? (0.6 - p.life) * 180 : 6, 0, Math.PI * 2); this.ctx.fill();
             }
         });
-        this.player.draw(this.ctx, this); this.ctx.restore(); this.updateHUD();
+        this.player.draw(this.ctx, this); this.ctx.restore(); 
+        
+        this.renderMiniMap();
+        this.updateHUD();
     }
     updateHUD() {
         const p = this.player; document.getElementById('hp-bar')!.style.width = `${Math.max(0, (p.hp / p.maxHp) * 100)}%`; document.getElementById('hp-text')!.innerText = `${Math.ceil(p.hp)} / ${p.maxHp}`; document.getElementById('gold-count')!.innerText = `Gold: ${p.gold}`; document.getElementById('stat-level')!.innerText = `Lv: ${p.level}`; document.getElementById('stat-depth')!.innerText = `D: ${this.currentDepth}`; document.getElementById('stat-ac')!.innerText = `AC: ${p.ac}`;
