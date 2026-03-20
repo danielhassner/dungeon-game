@@ -970,6 +970,7 @@ body {
 
 /* Game Menu */
 #game-menu {
+    position: fixed;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
@@ -1210,21 +1211,22 @@ body {
 
 #mini-map-container {
     position: fixed;
-    top: 20px;
-    right: 20px;
-    width: 220px;
-    height: 220px;
-    z-index: 1000;
-    padding: 5px;
+    top: 5px;
+    right: 5px;
+    width: 200px; /* Made slightly smaller for better fit */
+    height: 200px;
+    z-index: 2000; /* Increased to stay on top of other elements */
+    padding: 3px;
     border-radius: 50%;
     overflow: hidden;
-    box-shadow: 0 0 20px rgba(0,0,0,0.5), inset 0 0 15px rgba(0,0,0,0.2);
+    box-shadow: 0 0 20px rgba(0,0,0,0.6), inset 0 0 15px rgba(0,0,0,0.3);
     border: 3px solid #5a3e1b;
-    transition: right 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .inventory-active #mini-map-container {
-    right: 180px;
+    right: 220px; /* Reduced from 430px to be less intrusive */
+    top: 10px;
 }
 
 #mini-map-canvas {

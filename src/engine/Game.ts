@@ -1376,7 +1376,9 @@ class Player {
         }
         ctx.fillStyle = this.color; ctx.beginPath(); ctx.arc(this.x, this.y, 25, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.stroke();
         ctx.restore();
-        if (this.swingTime > 0) {
+        const weapon = this.equipment.weapon;
+        const isBow = weapon && weapon.name.toLowerCase().includes('bow');
+        if (this.swingTime > 0 && !isBow) {
             ctx.save();
             ctx.strokeStyle = `rgba(255, 255, 255, ${this.swingTime / 0.3})`;
             ctx.lineWidth = 14;
@@ -1779,15 +1781,27 @@ export class Game {
     }
     setupUI() {
         window.addEventListener('keydown', e => {
-            if (e.key === 'Escape') {
+            if (e.code === 'Escape') {
+                e.preventDefault();
                 let closed = false;
-                if (document.getElementById('inventory-panel')?.style.display !== 'none') { this.toggleInventory(false); closed = true; }
-                if (document.getElementById('interaction-panel')?.style.display !== 'none') { this.closeInteraction(); closed = true; }
-                if (document.getElementById('skill-tree-panel')?.style.display !== 'none') { this.toggleSkillTree(false); closed = true; }
-                if (document.getElementById('map-panel')?.style.display !== 'none') { this.toggleMap(false); closed = true; }
+                const panels = ['inventory-panel', 'interaction-panel', 'skill-tree-panel', 'map-panel'];
+                panels.forEach(id => {
+                    const p = document.getElementById(id);
+                    if (p && p.style.display !== 'none' && p.style.display !== '') {
+                        if (id === 'inventory-panel') this.toggleInventory(false);
+                        else if (id === 'interaction-panel') this.closeInteraction();
+                        else if (id === 'skill-tree-panel') this.toggleSkillTree(false);
+                        else if (id === 'map-panel') this.toggleMap(false);
+                        closed = true;
+                    }
+                });
 
-                if (!closed) { this.toggleGameMenu(); }
-                else if (document.getElementById('game-menu')?.style.display === 'block') { this.toggleGameMenu(false); }
+                if (!closed) {
+                    this.toggleGameMenu();
+                } else {
+                    // If we closed a panel, ensure game menu is hidden
+                    this.toggleGameMenu(false);
+                }
             }
             if (e.code === 'Tab') {
                 e.preventDefault();
@@ -1847,6 +1861,7 @@ export class Game {
         if (e.button === 0) { // Left click for panning
             this.isPanningMap = true;
             this.lastMousePos = { x: e.clientX, y: e.clientY };
+            (e.target as HTMLElement).style.cursor = 'grabbing';
         }
     }
     handleMapMouseMove(e: MouseEvent) {
@@ -1861,36 +1876,43 @@ export class Game {
     }
     handleMapMouseUp() {
         this.isPanningMap = false;
+        const canvas = document.getElementById('map-canvas');
+        if (canvas) canvas.style.cursor = 'grab';
     }
     handleMapContextMenu(e: MouseEvent) {
         e.preventDefault();
         const canvas = e.target as HTMLCanvasElement;
         const rect = canvas.getBoundingClientRect();
-        const mouseX = e.clientX - rect.left;
-        const mouseY = e.clientY - rect.top;
-
-        const isoScaleY = 0.7;
+        
+        // Use consistent scale factors
+        const isoScaleY = 0.85; // Increased from 0.7 to be less "condensed"
         const isoRotate = Math.PI / 4;
+        const cosR = Math.cos(isoRotate);
+        
+        // Calculate tileSize exactly as in renderMap
         const diagonalPoints = this.level.width + this.level.height;
         const baseScale = Math.min(
-            (canvas.width * 0.9) / (diagonalPoints * 0.707),
-            (canvas.height * 0.9) / (diagonalPoints * 0.707 * isoScaleY)
+            (canvas.width * 0.9) / (diagonalPoints * cosR),
+            (canvas.height * 0.9) / (diagonalPoints * cosR * isoScaleY)
         );
         const tileSize = baseScale * this.mapZoom;
 
-        // Correct Reverse Math:
-        // 1. Center the mouse relative to canvas center + mapOffset
+        // 1. Get mouse position relative to canvas content (accounting for any CSS scaling)
+        const mouseX = (e.clientX - rect.left) * (canvas.width / rect.width);
+        const mouseY = (e.clientY - rect.top) * (canvas.height / rect.height);
+
+        // 2. Center the mouse relative to canvas center + mapOffset
         let x = mouseX - (canvas.width / 2 + this.mapOffset.x);
         let y = mouseY - (canvas.height / 2 + this.mapOffset.y);
         
-        // 2. Reverse ISO Scale
+        // 3. Reverse ISO Scale
         y /= isoScaleY;
         
-        // 3. Reverse Rotation
+        // 4. Reverse Rotation (Standard rotation inverse)
         const rx = x * Math.cos(-isoRotate) - y * Math.sin(-isoRotate);
         const ry = x * Math.sin(-isoRotate) + y * Math.cos(-isoRotate);
         
-        // 4. Reverse Grid Translation
+        // 5. Reverse Grid Translation
         const gridX = (rx + (this.level.width * tileSize / 2)) / tileSize;
         const gridY = (ry + (this.level.height * tileSize / 2)) / tileSize;
 
@@ -1924,13 +1946,14 @@ export class Game {
 
         // Map transformation settings
         const isoRotate = Math.PI / 4;
-        const isoScaleY = 0.7;
+        const isoScaleY = 0.85; // Increased from 0.7 to be less "condensed"
+        const cosR = Math.cos(isoRotate);
 
         // Calculate dynamic tile size to fit the level
         const diagonalPoints = level.width + level.height;
         const scale = Math.min(
-            (canvas.width * 0.9) / (diagonalPoints * 0.707),
-            (canvas.height * 0.9) / (diagonalPoints * 0.707 * isoScaleY)
+            (canvas.width * 0.9) / (diagonalPoints * cosR),
+            (canvas.height * 0.9) / (diagonalPoints * cosR * isoScaleY)
         );
         const tileSize = scale * this.mapZoom;
 
@@ -2000,16 +2023,17 @@ export class Game {
             }
         });
 
-        // Render Pins
+        // Render Pins (Subtle)
         this.mapPins.forEach(p => {
             ctx.fillStyle = '#3498db';
             ctx.shadowBlur = 10;
             ctx.shadowColor = '#3498db';
             ctx.beginPath();
-            ctx.moveTo(p.x * tileSize + tileSize/2, p.y * tileSize);
-            ctx.lineTo(p.x * tileSize + tileSize, p.y * tileSize + tileSize);
-            ctx.lineTo(p.x * tileSize, p.y * tileSize + tileSize);
+            ctx.arc(p.x * tileSize + tileSize/2, p.y * tileSize + tileSize/2, tileSize/4, 0, Math.PI * 2);
             ctx.fill();
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 1;
+            ctx.stroke();
             ctx.shadowBlur = 0;
         });
 
@@ -2042,11 +2066,11 @@ export class Game {
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         
-        const tileSize = 16; // Increased size for better clarity
-        const radius = 12; // Larger radius as requested
+        const tileSize = 16;
+        const radius = 15; // Slightly larger radius for better overview
         const px = this.player.x / 64;
         const py = this.player.y / 64;
-
+ 
         ctx.save();
         ctx.translate(canvas.width/2, canvas.height/2);
         
@@ -2298,10 +2322,19 @@ export class Game {
         });
     }
     toggleGameMenu(s?: boolean) {
-        const m = document.getElementById('game-menu')!;
+        const m = document.getElementById('game-menu');
+        if (!m) return;
         const show = s !== undefined ? s : m.style.display !== 'block';
         m.style.display = show ? 'block' : 'none';
-        this.isPaused = show; // Corrected from this.paused to this.isPaused
+        this.isPaused = show;
+        
+        // Ensure other panels are hidden when menu is shown
+        if (show) {
+            this.toggleInventory(false);
+            this.closeInteraction();
+            this.toggleSkillTree(false);
+            this.toggleMap(false);
+        }
     }
     fireHotbarSpell(idx: number) {
         const sId = this.player.hotbar[idx]; if (!sId) return;
