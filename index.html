@@ -41,6 +41,7 @@
           <button id="start-btn" class="menu-btn stone-texture">START ADVENTURE</button>
           <button id="sandbox-btn" class="menu-btn stone-texture">SANDBOX MODE</button>
           <button id="load-btn" class="menu-btn stone-texture">LOAD SAGA</button>
+          <button id="controls-btn" class="menu-btn stone-texture">CONTROLS</button>
           <button id="quit-btn" class="menu-btn stone-texture">ABANDON QUEST</button>
         </nav>
       </main>
@@ -236,6 +237,7 @@
         <h2 class="panel-header">PAUSED</h2>
         <div class="menu-content">
           <button id="resume-btn" class="menu-btn stone-texture">CONTINUE PLAYING</button>
+          <button id="game-controls-btn" class="menu-btn stone-texture">CONTROLS</button>
           <button id="main-menu-btn" class="menu-btn stone-texture">EXIT GAME</button>
         </div>
       </div>
@@ -249,6 +251,32 @@
       <!-- Mini Map -->
       <div id="mini-map-container" class="parchment">
         <canvas id="mini-map-canvas"></canvas>
+      </div>
+    </div>
+
+    <!-- Controls Panel (Accessible from both home and game) -->
+    <div id="controls-panel" class="modal-panel parchment draggable-window" style="display: none;">
+      <header class="drag-handle">
+        <h3>Dungeon Controls</h3>
+        <button class="close-btn" id="close-controls">X</button>
+      </header>
+      <div class="controls-content">
+        <table class="controls-table">
+          <tr data-action="moveUp"><td>Move Up</td><td class="key-bind-val">W</td></tr>
+          <tr data-action="moveDown"><td>Move Down</td><td class="key-bind-val">S</td></tr>
+          <tr data-action="moveLeft"><td>Move Left</td><td class="key-bind-val">A</td></tr>
+          <tr data-action="moveRight"><td>Move Right</td><td class="key-bind-val">D</td></tr>
+          <tr data-action="inventory"><td>Inventory</td><td class="key-bind-val">Tab</td></tr>
+          <tr data-action="map"><td>Map</td><td class="key-bind-val">M</td></tr>
+          <tr data-action="skills"><td>Skill Tree</td><td class="key-bind-val">K</td></tr>
+          <tr data-action="melee1"><td>Melee Ability 1</td><td class="key-bind-val">Q</td></tr>
+          <tr data-action="melee2"><td>Melee Ability 2</td><td class="key-bind-val">F</td></tr>
+          <tr data-action="melee3"><td>Melee Ability 3</td><td class="key-bind-val">R</td></tr>
+          <tr data-action="melee4"><td>Melee Ability 4</td><td class="key-bind-val">V</td></tr>
+          <tr data-action="pause"><td>Pause / Resume</td><td class="key-bind-val">Space</td></tr>
+          <tr><td>Attack</td><td>Left Click</td></tr>
+          <tr><td>Interact</td><td>Right Click</td></tr>
+        </table>
       </div>
     </div>
   </div>

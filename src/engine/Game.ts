@@ -1199,7 +1199,7 @@ class Player {
     skillPoints: number = 0;
     activeQuest: Quest | null = null;
     unlockedSkills: Set<string> = new Set(['basic_attack']);
-    meleeSlots: { [key: string]: string | null } = { 'KeyQ': null, 'KeyF': null, 'KeyR': null, 'KeyV': null };
+    meleeSlots: { [action: string]: string | null } = { 'melee1': null, 'melee2': null, 'melee3': null, 'melee4': null };
     meleeCooldowns: { [key: string]: number } = {};
     equipment: { helmet: Item | null, chestplate: Item | null, leggings: Item | null, boots: Item | null, weapon: Item | null } = { helmet: null, chestplate: null, leggings: null, boots: null, weapon: null };
     inventory: (Item | null)[] = Array(20).fill(null);
@@ -1273,9 +1273,9 @@ class Player {
                 if (empty !== -1) this.hotbar[empty] = skillId;
             }
         } else if (node.type === 'melee') {
-            const emptyKey = Object.keys(this.meleeSlots).find(k => this.meleeSlots[k] === null);
-            if (emptyKey) {
-                this.meleeSlots[emptyKey] = skillId;
+            const emptyAction = Object.keys(this.meleeSlots).find(a => this.meleeSlots[a] === null);
+            if (emptyAction) {
+                this.meleeSlots[emptyAction] = skillId;
                 game.updateHUD(); // Ensure UI updates
             }
         }
@@ -1311,17 +1311,17 @@ class Player {
         if (this.swingTime > 0) this.swingTime -= dt;
 
         let dx = 0, dy = 0;
-        if (input.isDown('KeyW')) { dx--; dy--; }
-        if (input.isDown('KeyS')) { dx++; dy++; }
-        if (input.isDown('KeyA')) { dx--; dy++; }
-        if (input.isDown('KeyD')) { dx++; dy--; }
+        if (input.isDown(game.keyBinds['moveUp'])) { dx--; dy--; }
+        if (input.isDown(game.keyBinds['moveDown'])) { dx++; dy++; }
+        if (input.isDown(game.keyBinds['moveLeft'])) { dx--; dy++; }
+        if (input.isDown(game.keyBinds['moveRight'])) { dx++; dy--; }
         let moveSpeed = 450;
         if (this.hasteTimer > 0) moveSpeed *= 1.8;
         if (this.etherealTimer > 0) moveSpeed *= 2.2;
         if (dx !== 0 || dy !== 0) { const m = Math.hypot(dx, dy), mx = (dx / m) * moveSpeed * dt, my = (dy / m) * moveSpeed * dt; if (!level.isWall(this.x + mx, this.y)) this.x += mx; if (!level.isWall(this.x, this.y + my)) this.y += my; }
 
         for (let i = 0; i < 8; i++) {
-            if (input.isDown(`Digit${i + 1}`)) {
+            if (input.isDown(game.keyBinds[`spell${i + 1}`])) {
                 const sId = this.hotbar[i];
                 if (sId && !this.cooldowns[sId]) {
                     const s = SPELL_DB[sId];
@@ -1333,9 +1333,9 @@ class Player {
         }
 
         // --- MELEE ABILITY INPUT HANDLING ---
-        ['KeyQ', 'KeyF', 'KeyR', 'KeyV'].forEach(k => {
-            if (input.isDown(k)) {
-                const aId = this.meleeSlots[k];
+        ['melee1', 'melee2', 'melee3', 'melee4'].forEach(action => {
+            if (input.isDown(game.keyBinds[action])) {
+                const aId = this.meleeSlots[action];
                 if (aId && (!this.meleeCooldowns[aId] || this.meleeCooldowns[aId] <= 0)) {
                     this.useMeleeAbility(aId, input, level, game);
                 }
@@ -1794,6 +1794,28 @@ export class Game {
     mapPins: { x: number, y: number }[] = [];
     isPanningMap = false;
     lastMousePos = { x: 0, y: 0 };
+    keyBinds: Record<string, string> = {
+        'moveUp': 'KeyW',
+        'moveDown': 'KeyS',
+        'moveLeft': 'KeyA',
+        'moveRight': 'KeyD',
+        'inventory': 'Tab',
+        'map': 'KeyM',
+        'skills': 'KeyK',
+        'melee1': 'KeyQ',
+        'melee2': 'KeyF',
+        'melee3': 'KeyR',
+        'melee4': 'KeyV',
+        'pause': 'Space',
+        'spell1': 'Digit1',
+        'spell2': 'Digit2',
+        'spell3': 'Digit3',
+        'spell4': 'Digit4',
+        'spell5': 'Digit5',
+        'spell6': 'Digit6',
+        'spell7': 'Digit7',
+        'spell8': 'Digit8',
+    };
  currentDepth = 1; levels: Map<number, Level> = new Map(); messageLog: string[] = ["Grand Expansion Initialized..."]; activeInteractingEntity: any = null; bufferedSpellSlot: number | null = null; selectedInvIdx: number | null = null;
     depthsWithVaults: Set<number> = new Set();
     activeMerchant: any = null;
@@ -1826,6 +1848,7 @@ export class Game {
         
         this.generateQuest(); // Initial quest
         this.setupUI();
+        this.loadKeyBinds();
         window.addEventListener('resize', () => {
             this.canvas.width = window.innerWidth;
             this.canvas.height = window.innerHeight;
@@ -1842,7 +1865,7 @@ export class Game {
             if (e.code === 'Escape') {
                 e.preventDefault();
                 let closed = false;
-                const panels = ['inventory-panel', 'interaction-panel', 'skill-tree-panel', 'map-panel'];
+                const panels = ['inventory-panel', 'interaction-panel', 'skill-tree-panel', 'map-panel', 'controls-panel'];
                 panels.forEach(id => {
                     const p = document.getElementById(id);
                     if (p && p.style.display !== 'none' && p.style.display !== '') {
@@ -1850,6 +1873,7 @@ export class Game {
                         else if (id === 'interaction-panel') this.closeInteraction();
                         else if (id === 'skill-tree-panel') this.toggleSkillTree(false);
                         else if (id === 'map-panel') this.toggleMap(false);
+                        else if (id === 'controls-panel') p.style.display = 'none';
                         closed = true;
                     }
                 });
@@ -1861,24 +1885,27 @@ export class Game {
                     this.toggleGameMenu(false);
                 }
             }
-            if (e.code === 'Tab') {
+            if (e.code === this.keyBinds['inventory']) {
                 e.preventDefault();
                 this.toggleInventory();
             }
-            if (e.key.toLowerCase() === 'm') {
+            if (e.code === this.keyBinds['map']) {
                 e.preventDefault();
                 this.toggleMap();
             }
-            if (e.code === 'KeyK') {
+            if (e.code === this.keyBinds['skills']) {
                 e.preventDefault();
                 this.toggleSkillTree();
             }
-            if (e.code === 'KeyE' && !this.isPaused) { const mIdx = this.player.hotbar.indexOf('magic_missile'); if (mIdx !== -1) this.fireHotbarSpell(mIdx); }
-            if (e.code === 'Space') {
+            if (e.code === this.keyBinds['pause']) {
                 this.isPaused = !this.isPaused;
                 if (!this.isPaused && this.bufferedSpellSlot !== null) this.fireHotbarSpell(this.bufferedSpellSlot);
             }
-            if (e.key >= '1' && e.key <= '8' && !this.isPaused) { const s = parseInt(e.key) - 1; this.fireHotbarSpell(s); }
+            for (let i = 0; i < 8; i++) {
+                if (e.code === this.keyBinds[`spell${i+1}`] && !this.isPaused) {
+                    this.fireHotbarSpell(i);
+                }
+            }
         });
         document.getElementById('resume-btn')?.addEventListener('click', () => this.toggleGameMenu(false));
         document.getElementById('main-menu-btn')?.addEventListener('click', () => location.reload());
@@ -3210,11 +3237,11 @@ export class Game {
             }
         }
         // Update Melee Hotbar
-        ['KeyQ', 'KeyF', 'KeyR', 'KeyV'].forEach((k, i) => {
+        ['melee1', 'melee2', 'melee3', 'melee4'].forEach((action, i) => {
             const sl = document.getElementById(`melee-slot-${i}`)!;
             if (!sl) return;
-            const aId = p.meleeSlots[k];
-            const keys = ['Q', 'F', 'R', 'V'];
+            const aId = p.meleeSlots[action];
+            const keyName = this.keyBinds[action].replace('Key', '').replace('Digit', '');
             if (aId && MELEE_ABILITY_DB[aId]) {
                 const a = MELEE_ABILITY_DB[aId];
                 sl.innerHTML = `<img src="/abilities/${aId}.png" class="item-icon" onerror="this.outerHTML='<span class=%22item-icon%22 style=%22font-size:32px;display:flex;align-items:center;justify-content:center;height:100%%22>${a.icon}</span>';">`;
@@ -3222,7 +3249,7 @@ export class Game {
                 sl.onmouseenter = ev => this.showMeleeTT(a, ev.clientX, ev.clientY);
                 sl.onmouseleave = () => this.hideTT();
             } else {
-                sl.innerHTML = `<div class="empty-slot-placeholder">${keys[i]}</div>`;
+                sl.innerHTML = `<div class="empty-slot-placeholder">${keyName}</div>`;
                 sl.style.opacity = '1';
                 sl.onmouseenter = null;
             }
@@ -3274,4 +3301,26 @@ export class Game {
         document.getElementById('tt-stats')!.innerText = "";
     }
     screenToWorld(mx: number, my: number) { const cx = this.canvas.width / 2, cy = this.canvas.height / 2; let x = mx - cx, y = (my - cy) / 0.7, a = -Math.PI / 4; const rx = x * Math.cos(a) - y * Math.sin(a), ry = x * Math.sin(a) + y * Math.cos(a); return { x: rx + this.player.x, y: ry + this.player.y }; }
+
+    setKeyBind(action: string, code: string) {
+        this.keyBinds[action] = code;
+        this.saveKeyBinds();
+        this.updateHUD(); // Refresh key hints
+    }
+
+    saveKeyBinds() {
+        localStorage.setItem('dungeon_game_keybinds', JSON.stringify(this.keyBinds));
+    }
+
+    loadKeyBinds() {
+        const saved = localStorage.getItem('dungeon_game_keybinds');
+        if (saved) {
+            try {
+                const parsed = JSON.parse(saved);
+                this.keyBinds = { ...this.keyBinds, ...parsed };
+            } catch (e) {
+                console.error("Failed to load keybinds:", e);
+            }
+        }
+    }
 }
