@@ -738,14 +738,72 @@ class Level {
         this.entities.push({ x: sx * 64 + 32, y: sy * 64 + 32, type: 'stairs-down', dead: false });
 
         // Generate Vault
-        let vaultCreated = false;
-        if (d > 1 && Math.random() < 0.7) { // Increased probability
-            const vx = Math.floor(Math.random() * (this.width - 6)) + 3, vy = Math.floor(Math.random() * (this.height - 6)) + 3;
-            for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) this.tiles[vy + dy][vx + dx] = 0;
-            this.tiles[vy][vx] = 2; // Locked door
-            this.entities.push({ x: vx * 64 + 32, y: (vy - 1) * 64 + 32, type: 'chest', isSpecial: true, inventory: getRandomLoot(d, 2000), dead: false });
-            vaultCreated = true;
-            if ((window as any).game) (window as any).game.depthsWithVaults.add(d);
+        if (d > 1 && Math.random() < 1.0) { // Set to 1.0 for testing
+            console.log(`[Level] Attempting vault generation for depth ${d}`);
+            const vx = Math.floor(Math.random() * (this.width - 10)) + 5;
+            const vy = Math.floor(Math.random() * (this.height - 10)) + 5;
+            
+            // Find nearest floor tile OUTSIDE the proposed 5x5 vault enclosure (vx-2..vx+2, vy-2..vy+2)
+            let targetX = -1, targetY = -1, minDist = Infinity;
+            for (let y = 1; y < this.height - 1; y++) {
+                for (let x = 1; x < this.width - 1; x++) {
+                    if (this.tiles[y][x] === 0) {
+                        if (x < vx - 2 || x > vx + 2 || y < vy - 2 || y > vy + 2) {
+                            const dist = Math.abs(x - vx) + Math.abs(y - (vy + 3));
+                            if (dist < minDist) {
+                                minDist = dist;
+                                targetX = x; targetY = y;
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (targetX !== -1) {
+                // 1. Enclosure: Create 5x5 wall boundary
+                for (let dy = -2; dy <= 2; dy++) {
+                    for (let dx = -2; dx <= 2; dx++) {
+                        this.tiles[vy + dy][vx + dx] = 1; 
+                    }
+                }
+                // 2. Room: Create 3x3 interior floor
+                for (let dy = -1; dy <= 1; dy++) {
+                    for (let dx = -1; dx <= 1; dx++) {
+                        this.tiles[vy + dy][vx + dx] = 0;
+                    }
+                }
+                
+                // 3. Corridor: From outside the door to nearest floor
+                let curX = vx, curY = vy + 3;
+                while (curX !== targetX) {
+                    this.tiles[curY][curX] = 0;
+                    curX += Math.sign(targetX - curX);
+                }
+                while (curY !== targetY) {
+                    this.tiles[curY][curX] = 0;
+                    curY += Math.sign(targetY - curY);
+                }
+
+                // 4. Door: Locked door on the 5x5 boundary (South)
+                this.tiles[vy + 2][vx] = 2; 
+                // Ensure a path from door to corridor exit (vy+3, vx must be floor)
+                this.tiles[vy + 3][vx] = 0;
+                
+                // 5. Loot: Special vault chest
+                this.entities.push({ 
+                    x: vx * 64 + 32, 
+                    y: (vy - 1) * 64 + 32, 
+                    type: 'chest', 
+                    isSpecial: true, 
+                    inventory: getRandomLoot(d, 2000), 
+                    dead: false 
+                });
+                
+                if ((window as any).game) (window as any).game.depthsWithVaults.add(d);
+                console.log(`[Level] Enclosed vault generated successfully at ${vx}, ${vy} with corridor to ${targetX}, ${targetY}`);
+            } else {
+                console.warn(`[Level] Vault generation FAILED: No outside floor found for corridor!`);
+            }
         }
 
         let merchantSpawned = false;
@@ -1810,6 +1868,10 @@ export class Game {
             if (e.key.toLowerCase() === 'm') {
                 e.preventDefault();
                 this.toggleMap();
+            }
+            if (e.code === 'KeyK') {
+                e.preventDefault();
+                this.toggleSkillTree();
             }
             if (e.code === 'KeyE' && !this.isPaused) { const mIdx = this.player.hotbar.indexOf('magic_missile'); if (mIdx !== -1) this.fireHotbarSpell(mIdx); }
             if (e.code === 'Space') {
