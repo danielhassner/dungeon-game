@@ -724,10 +724,32 @@ class Projectile {
     }
 }
 
+const BIOME_DB: Record<string, any> = {
+    'crypt': { name: 'Stone Crypt', floor: '#181818', wall: '#080808', enemyPool: ['Skeleton', 'Skeleton'], decor: 'none' },
+    'ruins': { name: 'Overgrown Ruins', floor: '#1a2a1a', wall: '#0a1a0a', enemyPool: ['Slime', 'Skeleton', 'Ogre'], decor: 'moss' }, // Greenish
+    'magma': { name: 'Magma Chamber', floor: '#2c0d0d', wall: '#1a0505', enemyPool: ['Ogre', 'Cultist', 'Earth Golem'], decor: 'lava' }, // Reddish
+    'frozen': { name: 'Frozen Vault', floor: '#1b2631', wall: '#0e1621', enemyPool: ['Wraith', 'Earth Golem'], decor: 'frost' }, // Deep Blue
+    'void': { name: 'Void Cathedral', floor: '#1e0a29', wall: '#0f0515', enemyPool: ['Cultist', 'Lich', 'Wraith'], decor: 'void' }, // Purple
+    'golden': { name: 'Golden Treasury', floor: '#2a2205', wall: '#1d1703', enemyPool: ['Skeleton', 'Ogre', 'Earth Golem'], decor: 'gold' }, // Gold/Yellow
+    'library': { name: 'Forgotten Library', floor: '#1e1a14', wall: '#0f0d0a', enemyPool: ['Lich', 'Cultist', 'Wraith'], decor: 'books' }, // Brown
+    'sewers': { name: 'Dank Sewers', floor: '#141e1a', wall: '#0a0f0d', enemyPool: ['Slime', 'Slime', 'Ogre'], decor: 'toxic' }, // Teal/Green
+    'workshop': { name: 'Mechanical Workshop', floor: '#1f1b1c', wall: '#121010', enemyPool: ['Earth Golem', 'Skeleton'], decor: 'gears' }, // Copper
+    'prison': { name: 'Obsidian Prison', floor: '#111', wall: '#000', enemyPool: ['Ogre', 'Cultist', 'Lich'], decor: 'chains' }, // Pure Black
+    'spectral': { name: 'Spectral Plane', floor: '#0d1f2d', wall: '#05111b', enemyPool: ['Wraith', 'Lich'], decor: 'stars' } // Sky Blue
+};
+
 class Level {
     width: number; height: number; tiles: number[][]; fog: number[][]; entities: any[] = []; spawnX = 0; spawnY = 0;
+    biome: string = 'crypt';
     constructor(w: number, h: number, d: number) {
         this.width = w; this.height = h; this.tiles = Array(h).fill(0).map(() => Array(w).fill(1)); this.fog = Array(h).fill(0).map(() => Array(w).fill(0));
+        
+        // Select biome based on depth or randomness
+        const biomeKeys = Object.keys(BIOME_DB);
+        this.biome = biomeKeys[Math.min(biomeKeys.length - 1, (d - 1) % biomeKeys.length)];
+        // Add some randomness if depth > 5
+        if (d > 5 && Math.random() < 0.3) this.biome = biomeKeys[Math.floor(Math.random() * biomeKeys.length)];
+        
         this.generate(d);
     }
     generate(d: number) {
@@ -814,10 +836,10 @@ class Level {
             if (this.tiles[ry][rx] === 0 && Math.hypot(rx * 64 - this.spawnX, ry * 64 - this.spawnY) > 300) {
                 const r = Math.random();
                 if (r < 0.35) { // Spawn chance
-                    const pool = ['Skeleton', 'Skeleton'];
-                    if (d > 2) pool.push('Ogre', 'Slime');
-                    if (d > 5) pool.push('Wraith', 'Cultist');
-                    if (d > 8) pool.push('Lich', 'Earth Golem');
+                    const b = BIOME_DB[this.biome];
+                    const pool = b.enemyPool.length > 0 ? [...b.enemyPool] : ['Skeleton', 'Skeleton'];
+                    if (d > 3 && !pool.includes('Ogre')) pool.push('Ogre');
+                    if (d > 8 && !pool.includes('Lich')) pool.push('Lich');
                     const eType = pool[Math.floor(Math.random() * pool.length)];
 
                     const game = (window as any).game;
@@ -846,6 +868,19 @@ class Level {
             let mx, my;
             do { mx = Math.floor(Math.random() * (this.width - 2)) + 1; my = Math.floor(Math.random() * (this.height - 2)) + 1; } while (this.tiles[my][mx] !== 0 || Math.hypot(mx * 64 - this.spawnX, my * 64 - this.spawnY) < 400);
             this.spawnMerchant(mx, my, d);
+        }
+
+        // Spawn Recruitable NPC
+        if (d > 1 && Math.random() < 0.25) {
+            let rx, ry;
+            do { rx = Math.floor(Math.random() * (this.width - 2)) + 1; ry = Math.floor(Math.random() * (this.height - 2)) + 1; } while (this.tiles[ry][rx] !== 0 || Math.hypot(rx * 64 - this.spawnX, ry * 64 - this.spawnY) < 500);
+            const pool = [
+                { name: 'Lost Knight', hp: 200, damage: 25, color: '#bdc3c7', icon: '🛡️' },
+                { name: 'Lost Apprentice', hp: 120, damage: 35, color: '#3498db', icon: '🧙' },
+                { name: 'Rogue Survivor', hp: 150, damage: 30, color: '#2c3e50', icon: '🗡️' }
+            ];
+            const data = pool[Math.floor(Math.random() * pool.length)];
+            this.entities.push({ x: rx * 64 + 32, y: ry * 64 + 32, type: 'recruitable_npc', name: data.name, hp: data.hp, maxHp: data.hp, damage: data.damage, color: data.color, icon: data.icon, dead: false });
         }
     }
     update(dt: number, player: Player, game: Game) {
@@ -1039,6 +1074,30 @@ class Level {
                 }
             }
 
+            // Party member AI
+            if (e.type === 'party_member' && !e.dead) {
+                let nearest: any = null; let minDist = 600;
+                this.entities.forEach(other => { if (other.type === 'enemy' && !other.dead) { const d2 = Math.hypot(other.x - e.x, other.y - e.y); if (d2 < minDist) { minDist = d2; nearest = other; } } });
+                
+                const spd = 200;
+                if (nearest) {
+                    const ang = Math.atan2(nearest.y - e.y, nearest.x - e.x);
+                    if (minDist > 50) {
+                        if (!this.isWall(e.x + Math.cos(ang) * spd * dt, e.y)) e.x += Math.cos(ang) * spd * dt;
+                        if (!this.isWall(e.x, e.y + Math.sin(ang) * spd * dt)) e.y += Math.sin(ang) * spd * dt;
+                    } else {
+                        nearest.hp -= e.damage * dt; if (nearest.hp <= 0) game.killEnemy(nearest);
+                    }
+                } else {
+                    const ang = Math.atan2(game.player.y - e.y, game.player.x - e.x);
+                    const d3 = Math.hypot(game.player.x - e.x, game.player.y - e.y);
+                    if (d3 > 100) {
+                        if (!this.isWall(e.x + Math.cos(ang) * spd * dt, e.y)) e.x += Math.cos(ang) * spd * dt;
+                        if (!this.isWall(e.x, e.y + Math.sin(ang) * spd * dt)) e.y += Math.sin(ang) * spd * dt;
+                    }
+                }
+            }
+
             // Mirror image AI
             if (e.type === 'mirror_image' && !e.dead) {
                 e.lifeTimer -= dt;
@@ -1067,12 +1126,46 @@ class Level {
         });
     }
     draw(ctx: CanvasRenderingContext2D) {
+        const b = BIOME_DB[this.biome];
         for (let y = 0; y < this.height; y++) for (let x = 0; x < this.width; x++) {
             const f = this.fog[y][x]; if (f === 0) continue;
             const t = this.tiles[y][x];
-            ctx.fillStyle = t === 1 ? '#080808' : (t === 2 ? '#4e342e' : (t === 3 ? '#1b1b1b' : '#181818'));
+            
+            // Biome specific colors
+            if (t === 1) ctx.fillStyle = b.wall; // Solid wall
+            else if (t === 2) ctx.fillStyle = '#4e342e'; // Locked door
+            else if (t === 3) ctx.fillStyle = b.floor; // Unlocked door
+            else ctx.fillStyle = b.floor; // Floor
+            
             if (f === 1) ctx.globalAlpha = 0.4;
             ctx.fillRect(x * 64, y * 64, 64, 64);
+            
+            // Biome Decorations
+            if (f === 2 && t === 1) { // Visible walls
+                if (b.decor === 'moss') {
+                    if ((x + y) % 5 === 0) { ctx.fillStyle = '#2d4a22'; ctx.fillRect(x * 64 + 10, y * 64 + 10, 20, 10); }
+                } else if (b.decor === 'lava') {
+                    if ((x + y) % 7 === 0) { ctx.fillStyle = '#e74c3c'; ctx.globalAlpha = 0.6; ctx.fillRect(x * 64, y * 64 + 32, 64, 4); ctx.globalAlpha = 1; }
+                } else if (b.decor === 'frost') {
+                    if ((x + y) % 4 === 0) { ctx.fillStyle = '#ebf5fb'; ctx.globalAlpha = 0.3; ctx.fillRect(x * 64 + 40, y * 64, 4, 32); ctx.globalAlpha = 1; }
+                } else if (b.decor === 'void') {
+                    if (Math.sin(Date.now() * 0.002 + x) > 0.8) { ctx.fillStyle = '#8e44ad'; ctx.globalAlpha = 0.2; ctx.fillRect(x * 64, y * 64, 64, 64); ctx.globalAlpha = 1; }
+                } else if (b.decor === 'books') {
+                    ctx.fillStyle = '#5d4037'; ctx.fillRect(x * 64 + 4, y * 64 + 4, 56, 8);
+                    ctx.fillStyle = '#8b4513'; ctx.fillRect(x * 64 + 4, y * 64 + 16, 56, 8);
+                } else if (b.decor === 'gold') {
+                    if ((x * y) % 3 === 0) { ctx.fillStyle = '#f1c40f'; ctx.fillRect(x * 64 + 20, y * 64 + 20, 8, 8); }
+                } else if (b.decor === 'gears') {
+                    if ((x + y) % 6 === 0) { ctx.strokeStyle = '#d35400'; ctx.beginPath(); ctx.arc(x * 64 + 32, y * 64 + 32, 10, 0, Math.PI * 2); ctx.stroke(); }
+                } else if (b.decor === 'chains') {
+                    if (x % 4 === 0) { ctx.fillStyle = '#555'; ctx.fillRect(x * 64 + 30, y * 64, 4, 64); }
+                } else if (b.decor === 'toxic') {
+                    if (Math.random() < 0.01) { ctx.fillStyle = '#2ecc71'; ctx.globalAlpha = 0.4; ctx.arc(x * 64 + 32, y * 64 + 32, 15, 0, Math.PI * 2); ctx.fill(); ctx.globalAlpha = 1; }
+                } else if (b.decor === 'stars') {
+                    if (Math.random() < 0.05) { ctx.fillStyle = '#fff'; ctx.fillRect(x * 64 + Math.random() * 60, y * 64 + Math.random() * 60, 2, 2); }
+                }
+            }
+
             if (t === 2) { ctx.strokeStyle = '#c5a059'; ctx.lineWidth = 4; ctx.strokeRect(x * 64 + 8, y * 64 + 8, 48, 48); ctx.fillStyle = '#c5a059'; ctx.font = '24px Arial'; ctx.fillText('🔒', x * 64 + 18, y * 64 + 40); }
             ctx.globalAlpha = 1;
         }
@@ -1127,6 +1220,16 @@ class Level {
                     ctx.beginPath(); ctx.moveTo(e.x + 6, e.y - 8); ctx.lineTo(e.x + 12, e.y + 6); ctx.stroke();
                 }
                 if (e.carriesKey) { ctx.fillStyle = '#f9ca24'; ctx.beginPath(); ctx.arc(e.x, e.y - 40, 6, 0, Math.PI * 2); ctx.fill(); }
+            } else if (e.type === 'party_member' || e.type === 'recruitable_npc') {
+                ctx.fillStyle = e.color || '#f1c40f';
+                ctx.beginPath(); ctx.arc(e.x, e.y, 25, 0, Math.PI * 2); ctx.fill();
+                ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
+                // Draw Icon
+                ctx.fillStyle = '#fff'; ctx.font = '24px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                ctx.fillText(e.icon || '👤', e.x, e.y);
+                // HP Bar
+                ctx.fillStyle = '#000'; ctx.fillRect(e.x - 25, e.y - 45, 50, 6);
+                ctx.fillStyle = '#4caf50'; ctx.fillRect(e.x - 25, e.y - 45, (e.hp / e.maxHp) * 50, 6);
             } else if (e.type === 'mirror_image') {
                 // Draw as a translucent copy of the player
                 ctx.globalAlpha = 0.5;
@@ -1825,6 +1928,7 @@ export class Game {
     isSandbox: boolean = false;
     enchantedAlly: any = null;
     mirrorImage: any = null;
+    party: any[] = [];
     constructor(canvas: HTMLCanvasElement, sandbox = false) {
         this.canvas = canvas; this.ctx = canvas.getContext('2d')!;
         this.isSandbox = sandbox;
@@ -2852,6 +2956,32 @@ export class Game {
         uiLoot.style.display = 'none';
         uiDiag.style.display = 'none';
 
+        if (e.type === 'recruitable_npc') {
+            uiDiag.style.display = 'block';
+            const diagText = document.getElementById('dialogue-text')!;
+            document.getElementById('merchant-name')!.innerText = e.name;
+            diagText.innerHTML = `"I've been lost in these halls for ages. If you'll have me, I'll fight by your side."`;
+            
+            const shopBtn = document.getElementById('open-shop-btn')!;
+            shopBtn.innerText = "RECRUIT TO PARTY";
+            shopBtn.onclick = () => {
+                if (this.party.length >= 3) {
+                    this.log("Your party is full! (Max 3)");
+                    return;
+                }
+                this.party.push(e);
+                e.type = 'party_member';
+                e.dead = false;
+                this.log(`${e.name} joined your party!`);
+                this.closeInteraction();
+                this.updateHUD();
+            };
+            
+            const questUI = document.getElementById('quest-ui');
+            if (questUI) questUI.style.display = 'none';
+            return;
+        }
+
         if (e.type === 'npc') {
             uiDiag.style.display = 'block';
             const diagText = document.getElementById('dialogue-text')!;
@@ -3107,6 +3237,14 @@ export class Game {
             const t = down ? 'stairs-up' : 'stairs-down', sts = this.level.entities.find(ent => ent.type === t);
             if (sts) { const os = [[0, 80], [0, -80], [80, 0], [-80, 0]]; let f = false; for (let o of os) if (!this.level.isWall(sts.x + o[0], sts.y + o[1])) { this.player.x = sts.x + o[0]; this.player.y = sts.y + o[1]; f = true; break; } if (!f) { this.player.x = sts.x; this.player.y = sts.y; } }
             else { this.player.x = this.level.spawnX; this.player.y = this.level.spawnY; }
+            
+            // Bring living party members along
+            this.party = this.party.filter(m => !m.dead && m.hp > 0);
+            this.party.forEach((m, i) => {
+                m.x = this.player.x + (Math.random() - 0.5) * 64;
+                m.y = this.player.y + (Math.random() - 0.5) * 64;
+                if (!this.level.entities.includes(m)) this.level.entities.push(m);
+            });
         }
     }
     loop(t: number) { const dt = Math.min((t - this.lastTime) / 1000, 0.1); this.lastTime = t; if (!this.isPaused && !this.isGameOver) this.update(dt); this.draw(); this.input.mousePosWorld = this.screenToWorld(this.input.mouse.x, this.input.mouse.y); requestAnimationFrame(this.loop.bind(this)); }
@@ -3254,6 +3392,22 @@ export class Game {
                 sl.onmouseenter = null;
             }
         });
+
+        // Update Party HUD
+        const partyHud = document.getElementById('party-hud');
+        if (partyHud) {
+            partyHud.innerHTML = this.party.map(m => `
+                <div class="party-member-card">
+                    <div class="pm-header">
+                        <span><span class="pm-icon">${m.icon || '👤'}</span> ${m.name}</span>
+                        <span>${Math.ceil(m.hp)} / ${m.maxHp}</span>
+                    </div>
+                    <div class="pm-hp-container">
+                        <div class="pm-hp-bar" style="width: ${(m.hp / m.maxHp) * 100}%"></div>
+                    </div>
+                </div>
+            `).join('');
+        }
     }
     showMeleeTT(a: MeleeAbility, x: number, y: number) {
         const tt = document.getElementById('game-tooltip')!; tt.style.display = 'block';
@@ -3300,12 +3454,17 @@ export class Game {
         document.getElementById('tt-price')!.innerText = status;
         document.getElementById('tt-stats')!.innerText = "";
     }
-    screenToWorld(mx: number, my: number) { const cx = this.canvas.width / 2, cy = this.canvas.height / 2; let x = mx - cx, y = (my - cy) / 0.7, a = -Math.PI / 4; const rx = x * Math.cos(a) - y * Math.sin(a), ry = x * Math.sin(a) + y * Math.cos(a); return { x: rx + this.player.x, y: ry + this.player.y }; }
+    screenToWorld(mx: number, my: number) { 
+        const cx = this.canvas.width / 2, cy = this.canvas.height / 2; 
+        let x = mx - cx, y = (my - cy) / 0.7, a = -Math.PI / 4; 
+        const rx = x * Math.cos(a) - y * Math.sin(a), ry = x * Math.sin(a) + y * Math.cos(a); 
+        return { x: rx + this.player.x, y: ry + this.player.y }; 
+    }
 
     setKeyBind(action: string, code: string) {
         this.keyBinds[action] = code;
         this.saveKeyBinds();
-        this.updateHUD(); // Refresh key hints
+        this.updateHUD(); // Refresh hotbar icons if keys changed
     }
 
     saveKeyBinds() {
@@ -3316,8 +3475,8 @@ export class Game {
         const saved = localStorage.getItem('dungeon_game_keybinds');
         if (saved) {
             try {
-                const parsed = JSON.parse(saved);
-                this.keyBinds = { ...this.keyBinds, ...parsed };
+                const binds = JSON.parse(saved);
+                Object.assign(this.keyBinds, binds);
             } catch (e) {
                 console.error("Failed to load keybinds:", e);
             }
