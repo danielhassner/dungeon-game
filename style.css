@@ -1363,3 +1363,53 @@ body {
     font-weight: bold;
     color: #d35400;
 }
+/* Character Customization (Phase 10) */
+.character-customization {
+    margin-bottom: 25px;
+    padding: 15px;
+    border: 2px solid #5d4037;
+    background: #fdf6e3; /* parchment color */
+    box-shadow: 0 4px 15px rgba(0,0,0,0.6);
+    animation: fadeIn 1s ease-out;
+    text-align: center;
+}
+
+.custom-label {
+    font-family: 'MedievalSharp', serif;
+    color: #3e2723;
+    font-size: 1.2rem;
+    margin-bottom: 12px;
+    letter-spacing: 2px;
+    text-shadow: 1px 1px 1px rgba(255,255,255,0.5);
+}
+
+.color-picker-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#player-color-picker {
+    width: 120px;
+    height: 45px;
+    padding: 2px;
+    border: 3px solid #3e2723;
+    border-radius: 4px;
+    background: #1a1a1a;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+#player-color-picker:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 15px rgba(243, 156, 18, 0.4);
+}
+
+#player-color-picker::-webkit-color-swatch-wrapper {
+    padding: 0;
+}
+
+#player-color-picker::-webkit-color-swatch {
+    border: none;
+    border-radius: 2px;
+}

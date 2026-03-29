@@ -22,7 +22,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 canvas.width = window.innerWidth;
                 canvas.height = window.innerHeight;
 
-                gameInstance = new Game(canvas, sandbox);
+                const colorPicker = document.getElementById('player-color-picker') as HTMLInputElement;
+                const selectedColor = colorPicker?.value || '#f39c12';
+
+                gameInstance = new Game(canvas, sandbox, selectedColor);
                 gameInstance.start();
             }, 500);
         }

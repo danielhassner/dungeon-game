@@ -533,6 +533,12 @@ class Projectile {
         if (this.owner && this.owner.type === 'enemy') {
             if (Math.hypot(this.x - game.player.x, this.y - game.player.y) < 35) {
                 game.damageTarget(game.player, this.owner, this.damage);
+                if (this.effect === 'root') game.player.rootTimer = 3;
+                if (this.effect === 'slow') game.player.slowTimer = 3;
+                if (this.effect === 'burn') { game.player.burnTimer = 3; game.player.burnDamage = 10; }
+                if (this.effect === 'poison') { game.player.poisonTimer = (game.player.poisonTimer || 0) + 4; game.player.poisonDamage = 8; }
+                if (this.effect === 'weaken') game.player.weakenTimer = 5;
+                if (this.effect === 'blind') game.player.blindTimer = 3;
                 this.dead = true;
                 return;
             }
@@ -725,30 +731,76 @@ class Projectile {
 }
 
 const BIOME_DB: Record<string, any> = {
-    'crypt': { name: 'Stone Crypt', floor: '#181818', wall: '#080808', enemyPool: ['Skeleton', 'Skeleton'], decor: 'none' },
-    'ruins': { name: 'Overgrown Ruins', floor: '#1a2a1a', wall: '#0a1a0a', enemyPool: ['Slime', 'Skeleton', 'Ogre'], decor: 'moss' }, // Greenish
-    'magma': { name: 'Magma Chamber', floor: '#2c0d0d', wall: '#1a0505', enemyPool: ['Ogre', 'Cultist', 'Earth Golem'], decor: 'lava' }, // Reddish
-    'frozen': { name: 'Frozen Vault', floor: '#1b2631', wall: '#0e1621', enemyPool: ['Wraith', 'Earth Golem'], decor: 'frost' }, // Deep Blue
-    'void': { name: 'Void Cathedral', floor: '#1e0a29', wall: '#0f0515', enemyPool: ['Cultist', 'Lich', 'Wraith'], decor: 'void' }, // Purple
-    'golden': { name: 'Golden Treasury', floor: '#2a2205', wall: '#1d1703', enemyPool: ['Skeleton', 'Ogre', 'Earth Golem'], decor: 'gold' }, // Gold/Yellow
-    'library': { name: 'Forgotten Library', floor: '#1e1a14', wall: '#0f0d0a', enemyPool: ['Lich', 'Cultist', 'Wraith'], decor: 'books' }, // Brown
-    'sewers': { name: 'Dank Sewers', floor: '#141e1a', wall: '#0a0f0d', enemyPool: ['Slime', 'Slime', 'Ogre'], decor: 'toxic' }, // Teal/Green
-    'workshop': { name: 'Mechanical Workshop', floor: '#1f1b1c', wall: '#121010', enemyPool: ['Earth Golem', 'Skeleton'], decor: 'gears' }, // Copper
-    'prison': { name: 'Obsidian Prison', floor: '#111', wall: '#000', enemyPool: ['Ogre', 'Cultist', 'Lich'], decor: 'chains' }, // Pure Black
-    'spectral': { name: 'Spectral Plane', floor: '#0d1f2d', wall: '#05111b', enemyPool: ['Wraith', 'Lich'], decor: 'stars' } // Sky Blue
+    'crypt': { name: 'Stone Crypt', floor: '#181818', wall: '#080808', enemyPool: ['Skeleton', 'Zombie'], decor: 'none' },
+    'ruins': { name: 'Overgrown Ruins', floor: '#1a2a1a', wall: '#0a1a0a', enemyPool: ['Slime', 'Giant Spider'], decor: 'moss' },
+    'magma': { name: 'Magma Chamber', floor: '#2c0d0d', wall: '#1a0505', enemyPool: ['Magma Ogre', 'Fire Elemental'], decor: 'lava' },
+    'frozen': { name: 'Frozen Vault', floor: '#1b2631', wall: '#0e1621', enemyPool: ['Frost Golem', 'Ice Wraith'], decor: 'frost' },
+    'void': { name: 'Void Cathedral', floor: '#1e0a29', wall: '#0f0515', enemyPool: ['Void Reaver', 'Cultist'], decor: 'void' },
+    'golden': { name: 'Golden Treasury', floor: '#2a2205', wall: '#1d1703', enemyPool: ['Mimic', 'Gold Golem'], decor: 'gold' },
+    'library': { name: 'Forgotten Library', floor: '#1e1a14', wall: '#0f0d0a', enemyPool: ['Lich', 'Animated Tome'], decor: 'books' },
+    'sewers': { name: 'Dank Sewers', floor: '#141e1a', wall: '#0a0f0d', enemyPool: ['Plague Rat', 'Hydromancer'], decor: 'toxic' },
+    'workshop': { name: 'Mechanical Workshop', floor: '#1f1b1c', wall: '#121010', enemyPool: ['Clockwork Soldier', 'Scrap Drone'], decor: 'gears' },
+    'prison': { name: 'Obsidian Prison', floor: '#111', wall: '#000', enemyPool: ['Chain Fiend', 'Shadow Guard'], decor: 'chains' },
+    'spectral': { name: 'Spectral Plane', floor: '#0d1f2d', wall: '#05111b', enemyPool: ['Banshee', 'Phantasm'], decor: 'stars' }
 };
 
 class Level {
     width: number; height: number; tiles: number[][]; fog: number[][]; entities: any[] = []; spawnX = 0; spawnY = 0;
-    biome: string = 'crypt';
+    biomeMap: string[][] = [];
     constructor(w: number, h: number, d: number) {
-        this.width = w; this.height = h; this.tiles = Array(h).fill(0).map(() => Array(w).fill(1)); this.fog = Array(h).fill(0).map(() => Array(w).fill(0));
+        this.width = w; this.height = h;
+        this.tiles = Array(h).fill(0).map(() => Array(w).fill(1));
+        this.fog = Array(h).fill(0).map(() => Array(w).fill(0));
+        this.biomeMap = Array(h).fill(0).map(() => Array(w).fill('crypt'));
         
-        // Select biome based on depth or randomness
+        // --- Multi-Biome Generation (Phase 18) ---
         const biomeKeys = Object.keys(BIOME_DB);
-        this.biome = biomeKeys[Math.min(biomeKeys.length - 1, (d - 1) % biomeKeys.length)];
-        // Add some randomness if depth > 5
-        if (d > 5 && Math.random() < 0.3) this.biome = biomeKeys[Math.floor(Math.random() * biomeKeys.length)];
+        const centerCount = 3 + Math.floor(Math.random() * 3); // 3-5 biome centers
+        const centers: {x: number, y: number, b: string}[] = [];
+        
+        for (let i = 0; i < centerCount; i++) {
+            centers.push({
+                x: Math.random() * w,
+                y: Math.random() * h,
+                b: biomeKeys[Math.floor(Math.random() * biomeKeys.length)]
+            });
+        }
+
+        for (let y = 0; y < h; y++) {
+            for (let x = 0; x < w; x++) {
+                let nearest = centers[0];
+                let minDist = Math.hypot(x - centers[0].x, y - centers[0].y);
+                centers.forEach(c => {
+                    const dist = Math.hypot(x - c.x, y - c.y);
+                    // Add some noise for natural-looking but structured transitions
+                    const noise = (Math.random() - 0.5) * 8; 
+                    if (dist + noise < minDist) { minDist = dist + noise; nearest = c; }
+                });
+                this.biomeMap[y][x] = nearest.b;
+            }
+        }
+
+        // --- Smoothing Pass (Phase 20) ---
+        // Simple cellular automata-style smoothing to remove small patches
+        const smoothedMap = JSON.parse(JSON.stringify(this.biomeMap));
+        for (let y = 1; y < h - 1; y++) {
+            for (let x = 1; x < w - 1; x++) {
+                const neighbors: Record<string, number> = {};
+                for (let dy = -1; dy <= 1; dy++) {
+                    for (let dx = -1; dx <= 1; dx++) {
+                        const b = this.biomeMap[y + dy][x + dx];
+                        neighbors[b] = (neighbors[b] || 0) + 1;
+                    }
+                }
+                // If the current tile's biome is a minority in its 3x3 neighborhood, change it
+                let maxCount = 0; let dominantBiome = this.biomeMap[y][x];
+                for (const b in neighbors) {
+                    if (neighbors[b] > maxCount) { maxCount = neighbors[b]; dominantBiome = b; }
+                }
+                if (maxCount >= 5) smoothedMap[y][x] = dominantBiome;
+            }
+        }
+        this.biomeMap = smoothedMap;
         
         this.generate(d);
     }
@@ -836,7 +888,8 @@ class Level {
             if (this.tiles[ry][rx] === 0 && Math.hypot(rx * 64 - this.spawnX, ry * 64 - this.spawnY) > 300) {
                 const r = Math.random();
                 if (r < 0.35) { // Spawn chance
-                    const b = BIOME_DB[this.biome];
+                    const localBiome = this.biomeMap[ry][rx];
+                    const b = BIOME_DB[localBiome];
                     const pool = b.enemyPool.length > 0 ? [...b.enemyPool] : ['Skeleton', 'Skeleton'];
                     if (d > 3 && !pool.includes('Ogre')) pool.push('Ogre');
                     if (d > 8 && !pool.includes('Lich')) pool.push('Lich');
@@ -847,11 +900,29 @@ class Level {
 
                     let hpMult = 1, color = '#ff4757';
                     if (eType === 'Skeleton') color = '#f1f2f6';
-                    if (eType === 'Ogre') color = '#a38148'; // Ogre Brown
-                    if (eType === 'Slime') color = '#7bed9f';
-                    if (eType === 'Wraith') color = '#747d8c';
-                    if (eType === 'Cultist') color = '#30336b';
-                    if (eType === 'Earth Golem') { hpMult = 2.5; color = '#57606f'; }
+                    else if (eType === 'Zombie') { color = '#7bed9f'; hpMult = 1.8; }
+                    else if (eType === 'Ogre' || eType === 'Magma Ogre') color = '#a38148';
+                    else if (eType === 'Slime') color = '#2ecc71';
+                    else if (eType === 'Giant Spider') { color = '#2c3e50'; hpMult = 1.2; }
+                    else if (eType === 'Fire Elemental') { color = '#f39c12'; hpMult = 1.3; }
+                    else if (eType === 'Frost Golem') { color = '#70a1ff'; hpMult = 2.0; }
+                    else if (eType === 'Ice Wraith') { color = '#a29bfe'; hpMult = 0.9; }
+                    else if (eType === 'Wraith') color = '#747d8c';
+                    else if (eType === 'Void Reaver') { color = '#1e0a29'; hpMult = 1.4; }
+                    else if (eType === 'Cultist') color = '#30336b';
+                    else if (eType === 'Mimic') { color = '#e67e22'; hpMult = 1.5; }
+                    else if (eType === 'Gold Golem') { color = '#f1c40f'; hpMult = 3.0; }
+                    else if (eType === 'Lich') color = '#9b59b6';
+                    else if (eType === 'Animated Tome') { color = '#3498db'; hpMult = 0.8; }
+                    else if (eType === 'Plague Rat') { color = '#badc58'; hpMult = 0.6; }
+                    else if (eType === 'Hydromancer') { color = '#00a8ff'; hpMult = 1.1; }
+                    else if (eType === 'Clockwork Soldier') { color = '#d35400', hpMult = 1.6; }
+                    else if (eType === 'Scrap Drone') { color = '#95afc0'; hpMult = 0.5; }
+                    else if (eType === 'Chain Fiend') { color = '#2d3436'; hpMult = 1.7; }
+                    else if (eType === 'Shadow Guard') { color = '#000'; hpMult = 2.2; }
+                    else if (eType === 'Banshee') { color = '#ecf0f1'; hpMult = 1.0; }
+                    else if (eType === 'Phantasm') { color = '#bdc3c7'; hpMult = 0.9; }
+                    else if (eType === 'Earth Golem') { hpMult = 2.5; color = '#57606f'; }
                     if (eType === 'Lich') color = '#a29bfe';
 
                     this.entities.push({ x: rx * 64 + 32, y: ry * 64 + 32, type: 'enemy', enemyType: eType, hp: (100 + d * 50) * hpMult, maxHp: (100 + d * 50) * hpMult, dead: false, carriesKey, baseColor: color, abilityCd: 3 });
@@ -969,25 +1040,54 @@ class Level {
                 }
                 
                 if (e.abilityCd > 0) e.abilityCd -= dt;
-                else if (targetDist < 350) {
-                    if (e.enemyType === 'Ogre') {
+                else if (targetDist < 400) {
+                    const ang = Math.atan2(target.y - e.y, target.x - e.x);
+                    if (e.enemyType === 'Ogre' || e.enemyType === 'Magma Ogre') {
                         if (Math.random() < 0.5) { 
-                            game.particles.push({ x: e.x, y: e.y, life: 0.5, type: 'explosion', color: '#8d6e63' }); 
-                            if (targetDist < 160) {
-                                game.damageTarget(target, e, 35);
-                            }
-                            game.log("Ogre Stomp!"); e.abilityCd = 5; 
-                        } else { e.frenzy = true; setTimeout(() => e.frenzy = false, 1500); e.abilityCd = 6; game.log("Ogre Charges!"); }
+                            game.particles.push({ x: e.x, y: e.y, life: 0.5, type: 'explosion', color: e.baseColor }); 
+                            if (targetDist < 160) game.damageTarget(target, e, 35);
+                            game.log(`${e.enemyType} Stomp!`); e.abilityCd = 5; 
+                            if (e.enemyType === 'Magma Ogre') game.fieldEffects.push(new FieldEffect(e.x, e.y, 100, 3, 'fire_cloud', '#e67e22', 15, e));
+                        } else { e.frenzy = true; setTimeout(() => e.frenzy = false, 2000); e.abilityCd = 6; game.log(`${e.enemyType} Rages!`); }
                     } else if (e.enemyType === 'Lich') {
                         if (Math.random() < 0.7) { 
-                            game.projectiles.push(new Projectile(e.x, e.y, Math.atan2(target.y - e.y, target.x - e.x), 'shadowbolt', e, 25, '#9b59b6')); 
+                            game.projectiles.push(new Projectile(e.x, e.y, ang, 'shadowbolt', e, 30, '#9b59b6')); 
                             e.abilityCd = 3; 
                         } else { 
-                            this.entities.push({ x: e.x + 50, y: e.y + 50, type: 'enemy', enemyType: 'Skeleton', hp: 60, maxHp: 60, dead: false, abilityCd: 2, baseColor: '#f1f2f6' }); 
-                            game.log("Lich Summons!"); e.abilityCd = 9; 
+                            this.entities.push({ x: e.x + 50, y: e.y + 50, type: 'enemy', enemyType: 'Skeleton', hp: 70, maxHp: 70, dead: false, abilityCd: 2, baseColor: '#f1f2f6' }); 
+                            game.log("Lich Summons!"); e.abilityCd = 10; 
                         }
-                    } else if (e.enemyType === 'Skeleton') { /* Skeleton has no ranged attack now */ }
-                    else if (e.enemyType === 'Wraith') { 
+                    } else if (e.enemyType === 'Ice Wraith') {
+                        game.projectiles.push(new Projectile(e.x, e.y, ang, 'ice_spike', e, 25, '#70a1ff', 'dart', 'slow'));
+                        e.abilityCd = 3;
+                    } else if (e.enemyType === 'Giant Spider') {
+                        game.projectiles.push(new Projectile(e.x, e.y, ang, 'web', e, 10, '#ecf0f1', 'orb', 'root'));
+                        game.log("Spider Webs!"); e.abilityCd = 6;
+                    } else if (e.enemyType === 'Void Reaver') {
+                        e.x = target.x - Math.cos(ang) * 100; e.y = target.y - Math.sin(ang) * 100;
+                        game.damageTarget(target, e, 20); game.log("Void Warp!"); e.abilityCd = 5;
+                    } else if (e.enemyType === 'Chain Fiend') {
+                        game.particles.push({ x: target.x, y: target.y, life: 0.5, type: 'spark', color: '#555' });
+                        target.x = e.x + Math.cos(ang) * 80; target.y = e.y + Math.sin(ang) * 80;
+                        game.log("Chain Pull!"); e.abilityCd = 7;
+                        game.particles.push({ x: target.x, y: target.y, life: 0.5, type: 'spark', color: '#555' });
+                    } else if (e.enemyType === 'Hydromancer') {
+                        game.projectiles.push(new Projectile(e.x, e.y, ang, 'water_blast', e, 30, '#3498db', 'wave', 'knockback'));
+                        e.abilityCd = 4;
+                    } else if (e.enemyType === 'Banshee') {
+                        game.particles.push({ x: e.x, y: e.y, life: 0.8, type: 'shockwave', color: '#ecf0f1' });
+                        if (targetDist < 200) { target.fearTimer = 3; game.damageTarget(target, e, 15); }
+                        game.log("Banshee Scream!"); e.abilityCd = 8;
+                    } else if (e.enemyType === 'Animated Tome') {
+                        game.projectiles.push(new Projectile(e.x, e.y, ang, 'arcane_missile', e, 12, '#a29bfe', 'pulse'));
+                        e.abilityCd = 1.2;
+                    } else if (e.enemyType === 'Fire Elemental') {
+                        game.fieldEffects.push(new FieldEffect(e.x, e.y, 60, 4, 'fire_cloud', '#e67e22', 10, e));
+                        e.abilityCd = 2;
+                    } else if (e.enemyType === 'Scrap Drone') {
+                        if (targetDist < 80) { game.damageTarget(target, e, 80); e.hp = 0; game.killEnemy(e); game.log("Drone Explosion!"); }
+                        else { spd *= 2.5; e.abilityCd = 0.1; }
+                    } else if (e.enemyType === 'Wraith') { 
                         if (targetDist < 110) { 
                             game.damageTarget(target, e, 12);
                             e.hp = Math.min(e.maxHp, e.hp + 15); game.log("Soul Drain!"); e.abilityCd = 4; 
@@ -1126,10 +1226,11 @@ class Level {
         });
     }
     draw(ctx: CanvasRenderingContext2D) {
-        const b = BIOME_DB[this.biome];
         for (let y = 0; y < this.height; y++) for (let x = 0; x < this.width; x++) {
             const f = this.fog[y][x]; if (f === 0) continue;
             const t = this.tiles[y][x];
+            const localBiome = this.biomeMap[y][x];
+            const b = BIOME_DB[localBiome];
             
             // Biome specific colors
             if (t === 1) ctx.fillStyle = b.wall; // Solid wall
@@ -1140,29 +1241,30 @@ class Level {
             if (f === 1) ctx.globalAlpha = 0.4;
             ctx.fillRect(x * 64, y * 64, 64, 64);
             
-            // Biome Decorations
+            // Biome Decorations (Phase 20: Stable Seeds)
             if (f === 2 && t === 1) { // Visible walls
+                const seed = (x * 7 + y * 13) % 100;
                 if (b.decor === 'moss') {
-                    if ((x + y) % 5 === 0) { ctx.fillStyle = '#2d4a22'; ctx.fillRect(x * 64 + 10, y * 64 + 10, 20, 10); }
+                    if (seed % 5 === 0) { ctx.fillStyle = '#2d4a22'; ctx.fillRect(x * 64 + 10, y * 64 + 10, 20, 10); }
                 } else if (b.decor === 'lava') {
-                    if ((x + y) % 7 === 0) { ctx.fillStyle = '#e74c3c'; ctx.globalAlpha = 0.6; ctx.fillRect(x * 64, y * 64 + 32, 64, 4); ctx.globalAlpha = 1; }
+                    if (seed % 7 === 0) { ctx.fillStyle = '#e74c3c'; ctx.globalAlpha = 0.6; ctx.fillRect(x * 64, y * 64 + 32, 64, 4); ctx.globalAlpha = 1; }
                 } else if (b.decor === 'frost') {
-                    if ((x + y) % 4 === 0) { ctx.fillStyle = '#ebf5fb'; ctx.globalAlpha = 0.3; ctx.fillRect(x * 64 + 40, y * 64, 4, 32); ctx.globalAlpha = 1; }
+                    if (seed % 4 === 0) { ctx.fillStyle = '#ebf5fb'; ctx.globalAlpha = 0.3; ctx.fillRect(x * 64 + 40, y * 64, 4, 32); ctx.globalAlpha = 1; }
                 } else if (b.decor === 'void') {
                     if (Math.sin(Date.now() * 0.002 + x) > 0.8) { ctx.fillStyle = '#8e44ad'; ctx.globalAlpha = 0.2; ctx.fillRect(x * 64, y * 64, 64, 64); ctx.globalAlpha = 1; }
                 } else if (b.decor === 'books') {
                     ctx.fillStyle = '#5d4037'; ctx.fillRect(x * 64 + 4, y * 64 + 4, 56, 8);
                     ctx.fillStyle = '#8b4513'; ctx.fillRect(x * 64 + 4, y * 64 + 16, 56, 8);
                 } else if (b.decor === 'gold') {
-                    if ((x * y) % 3 === 0) { ctx.fillStyle = '#f1c40f'; ctx.fillRect(x * 64 + 20, y * 64 + 20, 8, 8); }
+                    if (seed % 6 === 0) { ctx.fillStyle = '#f1c40f'; ctx.fillRect(x * 64 + 20, y * 64 + 20, 8, 8); }
                 } else if (b.decor === 'gears') {
-                    if ((x + y) % 6 === 0) { ctx.strokeStyle = '#d35400'; ctx.beginPath(); ctx.arc(x * 64 + 32, y * 64 + 32, 10, 0, Math.PI * 2); ctx.stroke(); }
+                    if (seed % 6 === 0) { ctx.strokeStyle = '#d35400'; ctx.beginPath(); ctx.arc(x * 64 + 32, y * 64 + 32, 10, 0, Math.PI * 2); ctx.stroke(); }
                 } else if (b.decor === 'chains') {
                     if (x % 4 === 0) { ctx.fillStyle = '#555'; ctx.fillRect(x * 64 + 30, y * 64, 4, 64); }
                 } else if (b.decor === 'toxic') {
-                    if (Math.random() < 0.01) { ctx.fillStyle = '#2ecc71'; ctx.globalAlpha = 0.4; ctx.arc(x * 64 + 32, y * 64 + 32, 15, 0, Math.PI * 2); ctx.fill(); ctx.globalAlpha = 1; }
+                    if (seed % 10 === 0) { ctx.fillStyle = '#2ecc71'; ctx.globalAlpha = 0.4; ctx.beginPath(); ctx.arc(x * 64 + 32, y * 64 + 32, 15, 0, Math.PI * 2); ctx.fill(); ctx.globalAlpha = 1; }
                 } else if (b.decor === 'stars') {
-                    if (Math.random() < 0.05) { ctx.fillStyle = '#fff'; ctx.fillRect(x * 64 + Math.random() * 60, y * 64 + Math.random() * 60, 2, 2); }
+                    if (seed % 8 === 0) { ctx.fillStyle = '#fff'; ctx.fillRect(x * 64 + (seed % 60), y * 64 + (seed % 60), 2, 2); }
                 }
             }
 
@@ -1309,8 +1411,11 @@ class Player {
     hotbar: (string | null)[] = ['magic_missile', null, null, null, null, null, null, null];
     learnedSpells: Set<string> = new Set(['magic_missile']); cooldowns: { [key: string]: number } = {};
     swingTime: number = 0; swingAngle: number = 0;
-    constructor(x: number, y: number) {
+    rootTimer: number = 0; slowTimer: number = 0; burnTimer: number = 0; burnDamage: number = 0;
+    poisonTimer: number = 0; poisonDamage: number = 0; weakenTimer: number = 0; blindTimer: number = 0;
+    constructor(x: number, y: number, color: string = '#f39c12') {
         this.x = x; this.y = y; this.hp = 100; this.maxHp = 100; this.xp = 0; this.level = 1; this.gold = 50; this.ac = 0;
+        this.color = color;
         this.addItem({ ...ITEM_POOL['start_dagger'] });
         const it = this.inventory[0]; if (it) { (this.equipment as any).weapon = it; this.inventory[0] = null; }
     }
@@ -1399,6 +1504,16 @@ class Player {
     }
     calculateAC() { let n = 10; Object.values(this.equipment).forEach(v => { if (v && v.type !== 'weapon') n += v.value; }); this.ac = n; }
     update(dt: number, input: InputHandler, level: Level, game: Game) {
+        if (this.hp <= 0) return;
+        
+        // Status Timers (Phase 20)
+        if (this.rootTimer > 0) this.rootTimer -= dt;
+        if (this.slowTimer > 0) this.slowTimer -= dt;
+        if (this.burnTimer > 0) { this.burnTimer -= dt; this.hp -= this.burnDamage * dt; }
+        if (this.poisonTimer > 0) { this.poisonTimer -= dt; this.hp -= this.poisonDamage * dt; }
+        if (this.weakenTimer > 0) this.weakenTimer -= dt;
+        if (this.blindTimer > 0) this.blindTimer -= dt;
+
         if (this.manaShieldTimer > 0) {
             this.manaShieldTimer -= dt;
             // Continuous cooldown reset during Mana Shield
@@ -1418,9 +1533,14 @@ class Player {
         if (input.isDown(game.keyBinds['moveDown'])) { dx++; dy++; }
         if (input.isDown(game.keyBinds['moveLeft'])) { dx--; dy++; }
         if (input.isDown(game.keyBinds['moveRight'])) { dx++; dy--; }
+        
+        // Base Speed Adjustments
         let moveSpeed = 450;
         if (this.hasteTimer > 0) moveSpeed *= 1.8;
         if (this.etherealTimer > 0) moveSpeed *= 2.2;
+        if (this.slowTimer > 0) moveSpeed *= 0.5;
+        if (this.rootTimer > 0) moveSpeed = 0;
+
         if (dx !== 0 || dy !== 0) { const m = Math.hypot(dx, dy), mx = (dx / m) * moveSpeed * dt, my = (dy / m) * moveSpeed * dt; if (!level.isWall(this.x + mx, this.y)) this.x += mx; if (!level.isWall(this.x, this.y + my)) this.y += my; }
 
         for (let i = 0; i < 8; i++) {
@@ -1929,14 +2049,14 @@ export class Game {
     enchantedAlly: any = null;
     mirrorImage: any = null;
     party: any[] = [];
-    constructor(canvas: HTMLCanvasElement, sandbox = false) {
+    constructor(canvas: HTMLCanvasElement, sandbox = false, playerColor: string = '#f39c12') {
         this.canvas = canvas; this.ctx = canvas.getContext('2d')!;
         this.isSandbox = sandbox;
         this.camera = new Camera(canvas.width, canvas.height);
         this.input = new InputHandler(canvas);
         (window as any).game = this; // Set before level generation to allow depth tracking
         this.goToLevel(1, true);
-        this.player = new Player(this.level.spawnX, this.level.spawnY);
+        this.player = new Player(this.level.spawnX, this.level.spawnY, playerColor);
         this.generateQuest(); // Initial quest
         if (this.isSandbox) {
             this.player.gold = 999999;
@@ -3110,6 +3230,23 @@ export class Game {
                     baseColor: e.baseColor || '#7bed9f'
                 });
             }
+        }
+        if (e.enemyType === 'Zombie' && Math.random() < 0.5) {
+            this.log("The zombie lurches... it may rise again!");
+            setTimeout(() => {
+                const corpse = this.level.entities.find(ent => ent.type === 'corpse' && Math.hypot(ent.x - e.x, ent.y - e.y) < 5);
+                if (corpse) {
+                    corpse.dead = true; // Remove corpse
+                    this.level.entities.push({
+                        x: e.x, y: e.y, type: 'enemy', enemyType: 'Zombie',
+                        hp: e.maxHp * 0.4, maxHp: e.maxHp, dead: false, abilityCd: 5, baseColor: '#7bed9f'
+                    });
+                    this.log("A zombie has reanimated!");
+                }
+            }, 5000);
+        }
+        if (e.enemyType === 'Scrap Drone') {
+            this.particles.push({ x: e.x, y: e.y, life: 1.0, type: 'explosion', color: '#f39c12' });
         }
         const loot = getRandomLoot(this.currentDepth, 20 + this.currentDepth * 15);
         if (e.carriesKey) {
