@@ -12,6 +12,22 @@
 
 <body>
   <div id="app">
+    <!-- Color Picker Overlay (Phase 10) -->
+    <div id="color-picker-overlay" style="display: none;">
+      <div id="color-wheel-wrapper">
+        <h2 class="glow">SELECT THY AURA</h2>
+        <canvas id="color-wheel-canvas" width="300" height="300"></canvas>
+        <div id="color-preview-ring">
+          <div id="color-swatch-preview"></div>
+          <span id="color-hex-display">#f39c12</span>
+        </div>
+        <div class="color-picker-actions">
+          <button id="color-back-btn" class="menu-btn stone-texture">GO BACK</button>
+          <button id="color-confirm-btn" class="menu-btn stone-texture">DESCEND</button>
+        </div>
+      </div>
+    </div>
+
     <!-- 3D Home Screen -->
     <div id="home-view">
       <div class="dungeon-container">
@@ -38,12 +54,6 @@
           <h2 class="sub-title">DUNGEON</h2>
         </header>
         <nav class="menu">
-          <div class="character-customization parchment">
-            <h3 class="custom-label">CHOOSE THY GLOW</h3>
-            <div class="color-picker-container">
-              <input type="color" id="player-color-picker" value="#f39c12">
-            </div>
-          </div>
           <button id="start-btn" class="menu-btn stone-texture">START ADVENTURE</button>
           <button id="sandbox-btn" class="menu-btn stone-texture">SANDBOX MODE</button>
           <button id="load-btn" class="menu-btn stone-texture">LOAD SAGA</button>

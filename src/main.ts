@@ -4,39 +4,198 @@ import { Game } from './engine/Game'
 document.addEventListener('DOMContentLoaded', () => {
     let gameInstance: Game | null = null;
 
-    const startAdventure = (sandbox = false) => {
+    let pendingSandbox = false;
+    let selectedColor = '#f39c12';
+    let isRainbow = false;
+
+    window.addEventListener('keydown', (e) => {
+        if (e.key === '_') {
+            const overlay = document.getElementById('color-picker-overlay');
+            if (overlay && overlay.style.display !== 'none') {
+                isRainbow = true;
+                selectedColor = 'rainbow';
+            }
+        }
+    });
+
+    const animateRainbow = () => {
+        if (isRainbow && document.getElementById('color-picker-overlay')?.style.display !== 'none') {
+            const time = (Date.now() / 15) % 360;
+            const c = `hsl(${time}, 100%, 50%)`;
+            const swatch = document.getElementById('color-swatch-preview');
+            const hex = document.getElementById('color-hex-display');
+            const ring = document.getElementById('color-preview-ring');
+            if (swatch) swatch.style.background = c;
+            if (hex) hex.textContent = "RAINBOW";
+            if (ring) ring.style.boxShadow = `0 0 30px 8px ${c}, inset 0 0 20px ${c}`;
+            selectedColor = 'rainbow';
+        }
+        requestAnimationFrame(animateRainbow);
+    };
+    requestAnimationFrame(animateRainbow);
+
+    // ── Color Wheel ────────────────────────────────────────────────────────────
+    const drawColorWheel = () => {
+        const canvas = document.getElementById('color-wheel-canvas') as HTMLCanvasElement;
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d')!;
+        const cx = canvas.width / 2;
+        const cy = canvas.height / 2;
+        const radius = cx - 4;
+
+        // Hue ring
+        for (let angle = 0; angle < 360; angle++) {
+            const startAngle = (angle - 1) * Math.PI / 180;
+            const endAngle = (angle + 1) * Math.PI / 180;
+            const gradient = ctx.createRadialGradient(cx, cy, radius * 0.35, cx, cy, radius);
+            gradient.addColorStop(0, `hsla(${angle}, 100%, 50%, 0)`);
+            gradient.addColorStop(1, `hsl(${angle}, 100%, 50%)`);
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.arc(cx, cy, radius, startAngle, endAngle);
+            ctx.closePath();
+            ctx.fillStyle = `hsl(${angle}, 100%, 50%)`;
+            ctx.fill();
+        }
+
+        // White center fade
+        const centerGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius * 0.55);
+        centerGrad.addColorStop(0, 'rgba(255,255,255,1)');
+        centerGrad.addColorStop(0.6, 'rgba(255,255,255,0.6)');
+        centerGrad.addColorStop(1, 'rgba(255,255,255,0)');
+        ctx.beginPath();
+        ctx.arc(cx, cy, radius * 0.55, 0, Math.PI * 2);
+        ctx.fillStyle = centerGrad;
+        ctx.fill();
+
+        // Dark ring at edge
+        const darkRing = ctx.createRadialGradient(cx, cy, radius * 0.85, cx, cy, radius);
+        darkRing.addColorStop(0, 'rgba(0,0,0,0)');
+        darkRing.addColorStop(1, 'rgba(0,0,0,0.35)');
+        ctx.beginPath();
+        ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+        ctx.fillStyle = darkRing;
+        ctx.fill();
+    };
+
+    const getColorFromWheel = (canvas: HTMLCanvasElement, x: number, y: number): string => {
+        const ctx = canvas.getContext('2d')!;
+        const pixel = ctx.getImageData(x, y, 1, 1).data;
+        const toHex = (n: number) => n.toString(16).padStart(2, '0');
+        return `#${toHex(pixel[0])}${toHex(pixel[1])}${toHex(pixel[2])}`;
+    };
+
+    const updateColorPreview = (color: string) => {
+        selectedColor = color;
+        const swatch = document.getElementById('color-swatch-preview');
+        const hex = document.getElementById('color-hex-display');
+        const ring = document.getElementById('color-preview-ring');
+        if (swatch) swatch.style.background = color;
+        if (hex) hex.textContent = color;
+        if (ring) ring.style.boxShadow = `0 0 30px 8px ${color}, inset 0 0 20px ${color}`;
+    };
+
+    // ── Game Start Flow ────────────────────────────────────────────────────────
+    const launchGame = (sandbox: boolean, color: string) => {
         const homeView = document.getElementById('home-view');
+        const colorOverlay = document.getElementById('color-picker-overlay');
         const gameView = document.getElementById('game-view');
-        const canvas = document.getElementById('game-canvas') as HTMLCanvasElement;
+        const gameCanvas = document.getElementById('game-canvas') as HTMLCanvasElement;
         const deathScreen = document.getElementById('death-screen');
 
-        if (homeView && gameView && canvas) {
-            homeView.style.opacity = '0';
-            homeView.style.transition = 'opacity 0.5s ease';
-            if (deathScreen) deathScreen.style.display = 'none';
+        if (colorOverlay) colorOverlay.style.display = 'none';
+        if (homeView) homeView.style.display = 'none';
+        if (deathScreen) deathScreen.style.display = 'none';
 
-            setTimeout(() => {
-                homeView.style.display = 'none';
-                gameView.style.display = 'block';
-
-                canvas.width = window.innerWidth;
-                canvas.height = window.innerHeight;
-
-                const colorPicker = document.getElementById('player-color-picker') as HTMLInputElement;
-                const selectedColor = colorPicker?.value || '#f39c12';
-
-                gameInstance = new Game(canvas, sandbox, selectedColor);
-                gameInstance.start();
-            }, 500);
+        if (gameView && gameCanvas) {
+            gameView.style.display = 'block';
+            gameCanvas.width = window.innerWidth;
+            gameCanvas.height = window.innerHeight;
+            gameInstance = new Game(gameCanvas, sandbox, color);
+            gameInstance.start();
         }
     };
 
-    // Start Game
-    const startBtn = document.getElementById('start-btn');
-    startBtn?.addEventListener('click', () => startAdventure(false));
+    const showColorPicker = (sandbox: boolean) => {
+        pendingSandbox = sandbox;
+        const homeView = document.getElementById('home-view');
+        const overlay = document.getElementById('color-picker-overlay');
 
-    const sandboxBtn = document.getElementById('sandbox-btn');
-    sandboxBtn?.addEventListener('click', () => startAdventure(true));
+        if (homeView) {
+            homeView.style.opacity = '0';
+            homeView.style.transition = 'opacity 0.4s ease';
+            setTimeout(() => {
+                homeView.style.display = 'none';
+                if (overlay) {
+                    overlay.style.display = 'flex';
+                    isRainbow = false;
+                    selectedColor = '#f39c12';
+                    updateColorPreview(selectedColor);
+                    drawColorWheel();
+                }
+            }, 400);
+        }
+    };
+
+    // Button wiring
+    document.getElementById('start-btn')?.addEventListener('click', () => showColorPicker(false));
+    document.getElementById('sandbox-btn')?.addEventListener('click', () => showColorPicker(true));
+
+    // Color wheel interaction
+    const wheelCanvas = document.getElementById('color-wheel-canvas') as HTMLCanvasElement;
+    let isPicking = false;
+
+    const pickColor = (e: MouseEvent | TouchEvent) => {
+        const canvas = wheelCanvas;
+        if (!canvas) return;
+        const rect = canvas.getBoundingClientRect();
+        let clientX: number, clientY: number;
+        if (e instanceof TouchEvent) {
+            clientX = e.touches[0].clientX;
+            clientY = e.touches[0].clientY;
+        } else {
+            clientX = e.clientX;
+            clientY = e.clientY;
+        }
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        const x = (clientX - rect.left) * scaleX;
+        const y = (clientY - rect.top) * scaleY;
+        const cx = canvas.width / 2;
+        const cy = canvas.height / 2;
+        const dist = Math.sqrt((x - cx) ** 2 + (y - cy) ** 2);
+        if (dist > cx) return; // outside wheel
+        const color = getColorFromWheel(canvas, Math.round(x), Math.round(y));
+        if (color !== '#000000' && color !== '#ffffff') {
+            isRainbow = false;
+            updateColorPreview(color);
+        }
+    };
+
+    wheelCanvas?.addEventListener('mousedown', (e) => { isPicking = true; pickColor(e); });
+    wheelCanvas?.addEventListener('mousemove', (e) => { if (isPicking) pickColor(e); });
+    window.addEventListener('mouseup', () => { isPicking = false; });
+    wheelCanvas?.addEventListener('touchstart', (e) => { e.preventDefault(); pickColor(e); });
+    wheelCanvas?.addEventListener('touchmove', (e) => { e.preventDefault(); pickColor(e); });
+
+    // Confirm / Back
+    document.getElementById('color-confirm-btn')?.addEventListener('click', () => {
+        launchGame(pendingSandbox, selectedColor);
+    });
+
+    document.getElementById('color-back-btn')?.addEventListener('click', () => {
+        const overlay = document.getElementById('color-picker-overlay');
+        const homeView = document.getElementById('home-view');
+        if (overlay) overlay.style.display = 'none';
+        if (homeView) {
+            homeView.style.display = 'block';
+            homeView.style.opacity = '0';
+            requestAnimationFrame(() => {
+                homeView.style.transition = 'opacity 0.4s ease';
+                homeView.style.opacity = '1';
+            });
+        }
+    });
 
     // Restart Logic
     const restartBtn = document.getElementById('restart-btn');
