@@ -1110,7 +1110,10 @@ class Level {
                     } else if (e.enemyType === 'Scrap Drone') {
                         if (target && !target.dead && targetDist < 80) {
                             const targetHp = typeof target.hp === 'number' ? Math.max(0, target.hp) : 0;
-                            const explosionDamage = Math.min(30, Math.max(10, Math.floor(targetHp * 0.4)));
+                            let explosionDamage = Math.min(30, Math.max(10, Math.floor(targetHp * 0.4)));
+                            if (target === player && targetHp - explosionDamage <= 0) {
+                                explosionDamage = Math.max(1, targetHp - 1);
+                            }
                             if (explosionDamage > 0) {
                                 game.damageTarget(target, e, explosionDamage);
                             }
@@ -1209,7 +1212,7 @@ class Level {
             }
 
             // Party member AI
-            if (e.type === 'party_member' && !e.dead) {
+            if (e.type === 'party_member' && !e.dead && !e.isControlled) {
                 let nearest: any = null; let minDist = 600;
                 this.entities.forEach(other => { if (other.type === 'enemy' && !other.dead) { const d2 = Math.hypot(other.x - e.x, other.y - e.y); if (d2 < minDist) { minDist = d2; nearest = other; } } });
                 
@@ -1440,6 +1443,14 @@ class Player {
     unlockedSkills: Set<string> = new Set(['basic_attack']);
     meleeSlots: { [action: string]: string | null } = { 'melee1': null, 'melee2': null, 'melee3': null, 'melee4': null };
     meleeCooldowns: { [key: string]: number } = {};
+    type?: string;
+    name?: string;
+    role?: string;
+    icon?: string;
+    story?: string;
+    avatar?: string;
+    image?: string;
+    isControlled?: boolean;
     equipment: { helmet: Item | null, chestplate: Item | null, leggings: Item | null, boots: Item | null, weapon: Item | null } = { helmet: null, chestplate: null, leggings: null, boots: null, weapon: null };
     inventory: (Item | null)[] = Array(20).fill(null);
     hotbar: (string | null)[] = ['magic_missile', null, null, null, null, null, null, null];
@@ -2090,6 +2101,7 @@ export class Game {
     enchantedAlly: any = null;
     mirrorImage: any = null;
     party: any[] = [];
+    heroBackup: Player | null = null;
     availableLostAdventurerNames: string[] = [
         'Garrick Stormshield',
         'Elora Moonshadow',
@@ -3723,7 +3735,23 @@ export class Game {
         this.updateHUD();
     }
     updateHUD() {
-        const p = this.player; document.getElementById('hp-bar')!.style.width = `${Math.max(0, (p.hp / p.maxHp) * 100)}%`; document.getElementById('hp-text')!.innerText = `${Math.ceil(p.hp)} / ${p.maxHp}`; document.getElementById('gold-count')!.innerText = `Gold: ${p.gold}`; document.getElementById('stat-level')!.innerText = `Lv: ${p.level}`; document.getElementById('stat-depth')!.innerText = `D: ${this.currentDepth}`; document.getElementById('stat-ac')!.innerText = `AC: ${p.ac}`;
+        const p = this.player;
+        const activeName = p.name || p.role || 'The Traveler';
+        document.getElementById('hp-bar')!.style.width = `${Math.max(0, (p.hp / p.maxHp) * 100)}%`;
+        document.getElementById('hp-text')!.innerText = `${Math.ceil(p.hp)} / ${p.maxHp}`;
+        document.getElementById('gold-count')!.innerText = `Gold: ${p.gold}`;
+        document.getElementById('stat-name')!.innerText = activeName;
+        document.getElementById('stat-level')!.innerText = `Level: ${p.level}`;
+        const xpRatio = p.level > 0 ? Math.min(1, p.xp / (p.level * 1000)) : 0;
+        document.getElementById('stat-xp-val')!.innerText = `XP: ${p.xp}`;
+        document.getElementById('xp-bar')!.style.width = `${xpRatio * 100}%`;
+        document.getElementById('stat-depth')!.innerText = `D: ${this.currentDepth}`;
+        document.getElementById('stat-ac')!.innerText = `AC: ${p.ac}`;
+        const portraitImg = document.querySelector('.portrait-container .character-portrait img') as HTMLImageElement | null;
+        if (portraitImg) {
+            portraitImg.src = this.getPortraitUrl(p);
+            portraitImg.alt = activeName;
+        }
         ['helmet', 'chestplate', 'leggings', 'boots', 'weapon'].forEach(t => {
             const it = (p.equipment as any)[t], el = document.getElementById(`slot-${t}`)!;
             if (it) {
@@ -3768,7 +3796,41 @@ export class Game {
         // Update Party HUD
         const partyHud = document.getElementById('party-hud');
         if (partyHud) {
-            partyHud.innerHTML = this.party.map(m => {
+            let html = '';
+            if (this.heroBackup) {
+                const h = this.heroBackup;
+                const heroName = h.name || h.role || 'The Traveler';
+                const heroIcon = (h.icon || '👤').replace(/'/g, '&#39;');
+                const heroAvatar = this.getPortraitUrl(h);
+                const heroWeaponName = h.equipment?.weapon?.name || 'No Weapon';
+                const heroArmorSlots: Array<keyof Player['equipment']> = ['helmet', 'chestplate', 'leggings', 'boots'];
+                const heroArmorPieces = heroArmorSlots.map(slot => h.equipment?.[slot]?.name || null).filter(Boolean);
+                const heroArmorText = heroArmorPieces.length ? heroArmorPieces.join(' • ') : 'No Armor';
+                const heroInvCount = Array.isArray(h.inventory) ? h.inventory.filter((it: any) => it).length : 0;
+                const heroHp = typeof h.hp === 'number' ? h.hp : 0;
+                const heroMaxHp = typeof h.maxHp === 'number' ? h.maxHp : Math.max(100, heroHp);
+                const heroHpPercent = heroMaxHp > 0 ? Math.min(100, Math.max(0, (heroHp / heroMaxHp) * 100)) : 0;
+                html += `
+                    <div class="party-member-card" data-party-index="hero">
+                        <div class="party-member-portrait">
+                            <img src="${heroAvatar}" alt="${heroName}" onerror="this.style.display='none'; this.parentNode.insertAdjacentHTML('beforeend', '<div class=\'party-avatar-fallback\'>${heroIcon}</div>');" />
+                        </div>
+                        <div class="pm-header">
+                            <span>${heroName}</span>
+                            <span>${Math.ceil(heroHp)} / ${Math.ceil(heroMaxHp)}</span>
+                        </div>
+                        <div class="pm-hp-container">
+                            <div class="pm-hp-bar" style="width: ${heroHpPercent}%"></div>
+                        </div>
+                        <div class="pm-equipment">
+                            <div><strong>Weapon:</strong> ${heroWeaponName}</div>
+                            <div><strong>Armor:</strong> ${heroArmorText}</div>
+                            <div><strong>Inventory:</strong> ${heroInvCount} item(s)</div>
+                        </div>
+                    </div>
+                `;
+            }
+            html += this.party.map((m, i) => {
                 const nameSafe = (m.name || m.role || 'Adventurer').replace(/"/g, '&quot;');
                 const safeIcon = (m.icon || '👤').replace(/'/g, '&#39;');
                 const avatarSeed = m.name || m.role || 'Adventurer';
@@ -3781,7 +3843,7 @@ export class Game {
                 const maxHp = typeof m.maxHp === 'number' ? m.maxHp : Math.max(100, currentHp);
                 const hpPercent = maxHp > 0 ? Math.min(100, Math.max(0, (currentHp / maxHp) * 100)) : 0;
                 return `
-                <div class="party-member-card">
+                <div class="party-member-card" data-party-index="${i}">
                     <div class="party-member-portrait">
                         <img src="${avatarSrc}" alt="${nameSafe}" onerror="this.style.display='none'; this.parentNode.insertAdjacentHTML('beforeend', '<div class=\'party-avatar-fallback\'>${safeIcon}</div>');" />
                     </div>
@@ -3800,8 +3862,94 @@ export class Game {
                 </div>
             `;
             }).join('');
+            partyHud.innerHTML = html;
+            partyHud.oncontextmenu = (evt: MouseEvent) => {
+                evt.preventDefault();
+                let node: Node | null = evt.target as Node;
+                while (node && node !== partyHud) {
+                    if (node instanceof HTMLElement && node.classList.contains('party-member-card')) break;
+                    node = node.parentNode;
+                }
+                const card = (node instanceof HTMLElement && node.classList.contains('party-member-card')) ? node : null;
+                if (!card) return;
+                const idx = card.dataset.partyIndex;
+                if (idx === 'hero') {
+                    this.switchControlToHero();
+                } else {
+                    const index = Number(idx);
+                    if (!Number.isNaN(index) && this.party[index]) {
+                        this.switchControlToPartyMember(this.party[index]);
+                    }
+                }
+            };
         }
     }
+    private ensurePartyMemberInstance(member: any): Player {
+        if (member instanceof Player) return member;
+        const pm = new Player(member.x || 0, member.y || 0, member.color || '#f39c12');
+        pm.name = member.name || member.role || 'Party Member';
+        pm.role = member.role;
+        pm.icon = member.icon;
+        pm.story = member.story;
+        pm.avatar = member.avatar || member.image;
+        pm.color = member.color || pm.color;
+        pm.hp = typeof member.hp === 'number' ? member.hp : pm.hp;
+        pm.maxHp = typeof member.maxHp === 'number' ? member.maxHp : pm.maxHp;
+        pm.xp = typeof member.xp === 'number' ? member.xp : pm.xp;
+        pm.level = typeof member.level === 'number' ? member.level : pm.level;
+        pm.gold = typeof member.gold === 'number' ? member.gold : pm.gold;
+        pm.ac = typeof member.ac === 'number' ? member.ac : pm.ac;
+        pm.equipment = member.equipment ? { ...member.equipment } : pm.equipment;
+        pm.inventory = Array.isArray(member.inventory) ? member.inventory.map((it: any) => it ? { ...it } : null) : pm.inventory;
+        pm.hotbar = Array.isArray(member.hotbar) ? member.hotbar.slice() : pm.hotbar;
+        pm.learnedSpells = new Set(Array.isArray(member.learnedSpells) ? member.learnedSpells : Array.from(pm.learnedSpells));
+        pm.cooldowns = member.cooldowns ? { ...member.cooldowns } : {};
+        pm.meleeSlots = member.meleeSlots ? { ...member.meleeSlots } : { ...pm.meleeSlots };
+        pm.meleeCooldowns = member.meleeCooldowns ? { ...member.meleeCooldowns } : {};
+        pm.type = 'party_member';
+        pm.isControlled = false;
+
+        const partyIndex = this.party.indexOf(member);
+        if (partyIndex !== -1) this.party[partyIndex] = pm;
+        const entityIndex = this.level.entities.indexOf(member);
+        if (entityIndex !== -1) this.level.entities[entityIndex] = pm;
+        if (this.activeInteractingEntity === member) this.activeInteractingEntity = pm;
+        return pm;
+    }
+
+    private switchControlToPartyMember(member: any) {
+        const pm = this.ensurePartyMemberInstance(member);
+        if (this.player === pm) return;
+        if (!this.heroBackup) {
+            this.heroBackup = this.player;
+            this.heroBackup.type = 'party_member';
+            this.heroBackup.isControlled = false;
+            if (!this.level.entities.includes(this.heroBackup)) this.level.entities.push(this.heroBackup);
+        } else if (this.player !== this.heroBackup) {
+            this.player.isControlled = false;
+        }
+        pm.isControlled = true;
+        this.player = pm;
+    }
+
+    private switchControlToHero() {
+        if (!this.heroBackup) return;
+        if (this.player && this.player !== this.heroBackup) {
+            this.player.isControlled = false;
+        }
+        this.player = this.heroBackup;
+        this.heroBackup = null;
+        const heroIndex = this.level.entities.indexOf(this.player);
+        if (heroIndex !== -1) this.level.entities.splice(heroIndex, 1);
+        (this.player as any).type = undefined;
+        this.player.isControlled = false;
+    }
+
+    private getPortraitUrl(character: Player) {
+        const seed = character.name || character.role || 'adventurer';
+        return character.avatar || character.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(seed)}`;
+    }
+
     showMeleeTT(a: MeleeAbility, x: number, y: number) {
         const tt = document.getElementById('game-tooltip')!; tt.style.display = 'block';
         const offsetX = 20;
