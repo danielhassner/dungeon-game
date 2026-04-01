@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=MedievalSharp&family=Pirata+One&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
@@ -74,17 +75,18 @@
             <div class="hp-border"></div>
             <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=adventurer" alt="Player" />
           </div>
-        </div>
-        <div class="stat-panel parchment">
-          <h3 id="stat-name">The Traveler</h3>
-          <p id="stat-level">Level: 1</p>
-          <div class="xp-container">
-            <div id="xp-bar"></div>
+          <div class="stat-panel parchment">
+            <h3 id="stat-name">The Traveler</h3>
+            <p id="stat-level">Level: 1</p>
+            <div class="xp-container">
+              <div id="xp-bar"></div>
+            </div>
+            <p id="stat-ac">AC: 10</p>
+            <p id="stat-xp-val">XP: 0</p>
+            <p id="gold-count">Gold: 0</p>
           </div>
-          <p id="stat-ac">AC: 10</p>
-          <p id="stat-xp-val">XP: 0</p>
-          <p id="gold-count">Gold: 0</p>
         </div>
+        <div id="party-hud"></div>
       </aside>
 
       <!-- Bottom Bar (Actions & Logs) -->
@@ -105,9 +107,6 @@
           <span id="inventory-toggle" class="icon-btn" title="Inventory (Tab)">🎒</span>
         </div>
       </div>
-
-      <!-- Party HUD -->
-      <div id="party-hud"></div>
 
       <!-- Overlays Core -->
       <div id="spell-hotbar">
@@ -231,6 +230,8 @@
 
           <div class="dialogue-actions">
             <button id="open-shop-btn" class="menu-btn stone-texture">VIEW MERCHANDISE</button>
+            <button id="dialogue-option-btn" class="menu-btn stone-texture" style="display:none;">OPTION 1</button>
+            <button id="dialogue-option-btn-2" class="menu-btn stone-texture" style="display:none;">OPTION 2</button>
           </div>
         </div>
 

@@ -586,7 +586,7 @@ class Projectile {
                     if (this.effect === 'enchant') {
                         // Convert enemy to enchanted ally
                         if (game.enchantedAlly) { game.enchantedAlly.dead = true; game.enchantedAlly = null; }
-                        e.type = 'enchanted_ally'; e.baseColor = game.player.color || '#f39c12';
+                        e.type = 'enchanted_ally'; e.baseColor = game.player.color === 'rainbow' ? game.player.getDisplayColor() : (game.player.color || '#f39c12');
                         game.enchantedAlly = e;
                         game.log(`${e.enemyType} is now fighting for you!`);
                     }
@@ -941,17 +941,31 @@ class Level {
             this.spawnMerchant(mx, my, d);
         }
 
-        // Spawn Recruitable NPC
-        if (d > 1 && Math.random() < 0.25) {
+        // Spawn Lost Adventurer
+        const game = (window as any).game as Game | undefined;
+        if (d > 1 && game && game.hasAvailableLostAdventurer() && Math.random() < 0.7) {
+            const template = game.getLostAdventurerTemplate();
+            const name = game.getLostAdventurerName();
+            const gear = game.getStarterGear(template.role);
             let rx, ry;
-            do { rx = Math.floor(Math.random() * (this.width - 2)) + 1; ry = Math.floor(Math.random() * (this.height - 2)) + 1; } while (this.tiles[ry][rx] !== 0 || Math.hypot(rx * 64 - this.spawnX, ry * 64 - this.spawnY) < 500);
-            const pool = [
-                { name: 'Lost Knight', hp: 200, damage: 25, color: '#bdc3c7', icon: '🛡️' },
-                { name: 'Lost Apprentice', hp: 120, damage: 35, color: '#3498db', icon: '🧙' },
-                { name: 'Rogue Survivor', hp: 150, damage: 30, color: '#2c3e50', icon: '🗡️' }
-            ];
-            const data = pool[Math.floor(Math.random() * pool.length)];
-            this.entities.push({ x: rx * 64 + 32, y: ry * 64 + 32, type: 'recruitable_npc', name: data.name, hp: data.hp, maxHp: data.hp, damage: data.damage, color: data.color, icon: data.icon, dead: false });
+            do { rx = Math.floor(Math.random() * (this.width - 2)) + 1; ry = Math.floor(Math.random() * (this.height - 2)) + 1; }
+            while (this.tiles[ry][rx] !== 0 || Math.hypot(rx * 64 - this.spawnX, ry * 64 - this.spawnY) < 500);
+            this.entities.push({
+                x: rx * 64 + 32,
+                y: ry * 64 + 32,
+                type: 'recruitable_npc',
+                name,
+                role: template.role,
+                hp: template.hp,
+                maxHp: template.hp,
+                damage: template.damage,
+                color: template.color,
+                icon: template.icon,
+                story: template.story,
+                dead: false,
+                inventory: gear.inventory.slice(),
+                equipment: { ...gear.equipment }
+            });
         }
     }
     update(dt: number, player: Player, game: Game) {
@@ -1068,8 +1082,17 @@ class Level {
                         game.damageTarget(target, e, 20); game.log("Void Warp!"); e.abilityCd = 5;
                     } else if (e.enemyType === 'Chain Fiend') {
                         game.particles.push({ x: target.x, y: target.y, life: 0.5, type: 'spark', color: '#555' });
-                        target.x = e.x + Math.cos(ang) * 80; target.y = e.y + Math.sin(ang) * 80;
-                        game.log("Chain Pull!"); e.abilityCd = 7;
+                        const intendedX = e.x + Math.cos(ang) * 80;
+                        const intendedY = e.y + Math.sin(ang) * 80;
+                        const safeDest = game.getSafePullDestination(e.x, e.y, intendedX, intendedY);
+                        if (safeDest.x === e.x && safeDest.y === e.y) {
+                            game.log('Chain Pull blocked by walls!');
+                        } else {
+                            target.x = safeDest.x;
+                            target.y = safeDest.y;
+                            game.log('Chain Pull!');
+                        }
+                        e.abilityCd = 7;
                         game.particles.push({ x: target.x, y: target.y, life: 0.5, type: 'spark', color: '#555' });
                     } else if (e.enemyType === 'Hydromancer') {
                         game.projectiles.push(new Projectile(e.x, e.y, ang, 'water_blast', e, 30, '#3498db', 'wave', 'knockback'));
@@ -1085,8 +1108,19 @@ class Level {
                         game.fieldEffects.push(new FieldEffect(e.x, e.y, 60, 4, 'fire_cloud', '#e67e22', 10, e));
                         e.abilityCd = 2;
                     } else if (e.enemyType === 'Scrap Drone') {
-                        if (targetDist < 80) { game.damageTarget(target, e, 80); e.hp = 0; game.killEnemy(e); game.log("Drone Explosion!"); }
-                        else { spd *= 2.5; e.abilityCd = 0.1; }
+                        if (target && !target.dead && targetDist < 80) {
+                            const targetHp = typeof target.hp === 'number' ? Math.max(0, target.hp) : 0;
+                            const explosionDamage = Math.min(30, Math.max(10, Math.floor(targetHp * 0.4)));
+                            if (explosionDamage > 0) {
+                                game.damageTarget(target, e, explosionDamage);
+                            }
+                            e.hp = 0;
+                            game.killEnemy(e);
+                            game.log("Drone Explosion!");
+                        } else {
+                            spd *= 2.5;
+                            e.abilityCd = 0.1;
+                        }
                     } else if (e.enemyType === 'Wraith') { 
                         if (targetDist < 110) { 
                             game.damageTarget(target, e, 12);
@@ -1583,7 +1617,7 @@ class Player {
             });
 
             if (t && Math.hypot(this.x - t.x, this.y - t.y) < 180 && rClick) {
-                if (['npc', 'chest', 'stairs-down', 'stairs-up'].includes(t.type) || t.isCorpse) {
+                if (['npc', 'recruitable_npc', 'chest', 'stairs-down', 'stairs-up'].includes(t.type) || t.isCorpse) {
                     if (t.type === 'stairs-down') game.goToLevel(game.currentDepth + 1, true);
                     else if (t.type === 'stairs-up') game.goToLevel(game.currentDepth - 1, false);
                     else game.openInteraction(t);
@@ -1637,6 +1671,13 @@ class Player {
             }
         }
     }
+    getDisplayColor() {
+        if (this.color === 'rainbow') {
+            const hue = (performance.now() / 15) % 360;
+            return `hsl(${hue}, 100%, 70%)`;
+        }
+        return this.color;
+    }
     draw(ctx: CanvasRenderingContext2D, game: Game) {
         ctx.save();
         // Ethereal form glow
@@ -1655,7 +1696,7 @@ class Player {
             }
             ctx.globalAlpha = 1;
         }
-        ctx.fillStyle = this.color; ctx.beginPath(); ctx.arc(this.x, this.y, 25, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.stroke();
+        ctx.fillStyle = this.getDisplayColor(); ctx.beginPath(); ctx.arc(this.x, this.y, 25, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.stroke();
         ctx.restore();
         const weapon = this.equipment.weapon;
         const isBow = weapon && weapon.name.toLowerCase().includes('bow');
@@ -2049,6 +2090,151 @@ export class Game {
     enchantedAlly: any = null;
     mirrorImage: any = null;
     party: any[] = [];
+    availableLostAdventurerNames: string[] = [
+        'Garrick Stormshield',
+        'Elora Moonshadow',
+        'Thane Emberfall',
+        'Lyssa Vale',
+        'Maera Frostgarde',
+        'Derran Windrider',
+        'Sabra Nightbloom',
+        'Roland Ashwood',
+        'Mira Spellwynn',
+        'Tobin Ironhand'
+    ];
+    usedLostAdventurerNames: Set<string> = new Set();
+    lostAdventurerTemplates: any[] = [
+        {
+            role: 'Wounded Vanguard',
+            hp: 190,
+            damage: 24,
+            color: '#bdc3c7',
+            icon: '🛡️',
+            story: '“The eastern ramparts collapsed while we were retreating. I was the last to fall back, and I can still fight if you’ll have me.”',
+            dialogueOptions: [
+                { label: 'How did this happen?', response: '“Shadows swarmed us when the bridge broke. I barely escaped with my shield, but the rest are gone.”' },
+                { label: 'Can you still hold the line?', response: '“Yes. My armor is cracked, but I can still stand fast and keep foes away from you.”' }
+            ]
+        },
+        {
+            role: 'Runic Initiate',
+            hp: 130,
+            damage: 32,
+            color: '#3498db',
+            icon: '🪄',
+            story: '“I was tracing a failed spell circle when something ancient reached through the stones. I fled into these halls to hide.”',
+            dialogueOptions: [
+                { label: 'What did you summon?', response: '“Not a creature, but a memory. The circle cracked and something cold followed me; I barely escaped its gaze.”' },
+                { label: 'Can you cast for us?', response: '“I can still call flames and wards. I need a bodyguard while I focus.”' }
+            ]
+        },
+        {
+            role: 'Shadow Strider',
+            hp: 150,
+            damage: 28,
+            color: '#2c3e50',
+            icon: '🗡️',
+            story: '“I cut through patrols beneath the catacombs, but the maze turned against me. I can move unseen if you let me.”',
+            dialogueOptions: [
+                { label: 'What do you know of these halls?', response: '“The walls shift, but the old servants still listen. I can find traps and hidden doors.”' },
+                { label: 'Will you fight with us?', response: '“I prefer the shadows, but I will strike from them to protect you.”' }
+            ]
+        },
+        {
+            role: 'Forest Warden',
+            hp: 170,
+            damage: 20,
+            color: '#27ae60',
+            icon: '🏹',
+            story: '“The forest guard sent me in to recover a lost relic, but the undergrowth of stone grew too dense. I can still shoot true.”',
+            dialogueOptions: [
+                { label: 'What did you lose?', response: '“A wardstone that binds the grove. I need help finding it and escaping this place.”' },
+                { label: 'How good is your aim?', response: '“Sharp. One arrow can stop a charging brute before it reaches you.”' }
+            ]
+        },
+        {
+            role: 'Boneguard Squire',
+            hp: 180,
+            damage: 22,
+            color: '#95a5a6',
+            icon: '⚔️',
+            story: '“My squad was torn apart by the dead. I limped away to this dead corridor, but I am not finished yet.”',
+            dialogueOptions: [
+                { label: 'Do you have a mission?', response: '“I swore to avenge them. If you are willing to fight, I will stand with you.”' },
+                { label: 'What are your strengths?', response: '“I can take hits and keep pressure on the enemy while you strike from behind.”' }
+            ]
+        }
+    ];
+    getLostAdventurerName() {
+        const candidates = this.availableLostAdventurerNames.filter(name => !this.usedLostAdventurerNames.has(name));
+        const name = candidates.length ? candidates[Math.floor(Math.random() * candidates.length)] : `Wanderer ${Math.floor(Math.random() * 1000)}`;
+        if (candidates.length) this.usedLostAdventurerNames.add(name);
+        return name;
+    }
+    hasAvailableLostAdventurer() {
+        return this.availableLostAdventurerNames.some(name => !this.usedLostAdventurerNames.has(name));
+    }
+    getLostAdventurerTemplate() {
+        return this.lostAdventurerTemplates[Math.floor(Math.random() * this.lostAdventurerTemplates.length)];
+    }
+    getStarterGear(role: string) {
+        const gear: Record<string, { equipment: any, inventory: Item[] }> = {
+            'Wounded Vanguard': {
+                equipment: {
+                    helmet: { id: 'vanguard_helm', name: 'Vanguard Helm', type: 'helmet', value: 4, price: 40, icon: '⛑️', image: '', desc: 'A battered helm that still guards the head.', rarity: 'iron' },
+                    chestplate: { id: 'vanguard_plate', name: 'Vanguard Plate', type: 'chestplate', value: 6, price: 60, icon: '🛡️', image: '', desc: 'A cracked breastplate with battle scars.', rarity: 'iron' },
+                    leggings: null,
+                    boots: { id: 'vanguard_boots', name: 'Vanguard Boots', type: 'boots', value: 3, price: 30, icon: '🥾', image: '', desc: 'Heavy boots that keep the wearer planted.', rarity: 'iron' },
+                    weapon: { id: 'rusted_sword', name: 'Rusted Sword', type: 'weapon', value: 18, price: 70, icon: '🗡️', image: '', desc: 'A dull blade that still cuts deep.', rarity: 'iron' }
+                },
+                inventory: [{ id: 'health_potion', name: 'Health Potion', type: 'potion', value: 40, price: 30, icon: '🧪', image: '', desc: 'Restores health when used.', rarity: 'steel' }]
+            },
+            'Runic Initiate': {
+                equipment: {
+                    helmet: { id: 'initiate_cowl', name: 'Initiate Cowl', type: 'helmet', value: 2, price: 35, icon: '🧙', image: '', desc: 'A mystic cowl fit for a spellcaster.', rarity: 'iron' },
+                    chestplate: { id: 'runic_robe', name: 'Runic Robe', type: 'chestplate', value: 5, price: 65, icon: '🧥', image: '', desc: 'A robe inscribed with fading runes.', rarity: 'steel' },
+                    leggings: null,
+                    boots: { id: 'arcane_boots', name: 'Arcane Boots', type: 'boots', value: 2, price: 30, icon: '👢', image: '', desc: 'Boots that hum with latent power.', rarity: 'iron' },
+                    weapon: { id: 'runic_staff', name: 'Runic Staff', type: 'weapon', value: 22, price: 90, icon: '🪄', image: '', desc: 'A staff carved with glowing glyphs.', rarity: 'steel' }
+                },
+                inventory: [{ id: 'mana_potion', name: 'Mana Potion', type: 'potion', value: 30, price: 40, icon: '🔵', image: '', desc: 'Reduces spell cooldowns when used.', rarity: 'steel' }]
+            },
+            'Shadow Strider': {
+                equipment: {
+                    helmet: { id: 'shadow_mask', name: 'Shadow Mask', type: 'helmet', value: 3, price: 45, icon: '🥷', image: '', desc: 'A mask that hides the wearer in the dark.', rarity: 'iron' },
+                    chestplate: { id: 'night_leather', name: 'Night Leather', type: 'chestplate', value: 4, price: 55, icon: '🧥', image: '', desc: 'Light armor made for silent movement.', rarity: 'steel' },
+                    leggings: { id: 'shadow_leggings', name: 'Shadow Leggings', type: 'leggings', value: 3, price: 40, icon: '🩳', image: '', desc: 'Leggings that blend with the shadows.', rarity: 'iron' },
+                    boots: { id: 'silent_boots', name: 'Silent Boots', type: 'boots', value: 3, price: 35, icon: '🥾', image: '', desc: 'Soft-soled boots for stealthy travel.', rarity: 'iron' },
+                    weapon: { id: 'shadow_dagger', name: 'Shadow Dagger', type: 'weapon', value: 20, price: 75, icon: '🗡️', image: '', desc: 'A wicked dagger that strikes from darkness.', rarity: 'iron' }
+                },
+                inventory: [{ id: 'health_potion', name: 'Health Potion', type: 'potion', value: 30, price: 30, icon: '🧪', image: '', desc: 'Restores health when used.', rarity: 'steel' }]
+            },
+            'Forest Warden': {
+                equipment: {
+                    helmet: { id: 'warden_hood', name: 'Warden Hood', type: 'helmet', value: 3, price: 45, icon: '🥾', image: '', desc: 'A moss-lined hood from the woods.', rarity: 'iron' },
+                    chestplate: { id: 'warden_hide', name: 'Warden Hide', type: 'chestplate', value: 5, price: 60, icon: '🛡️', image: '', desc: 'Hide armor reinforced with bark.', rarity: 'steel' },
+                    leggings: { id: 'forest_leggings', name: 'Forest Leggings', type: 'leggings', value: 3, price: 40, icon: '🩳', image: '', desc: 'Flexible leggings for quick movement.', rarity: 'iron' },
+                    boots: { id: 'warden_boots', name: 'Warden Boots', type: 'boots', value: 3, price: 35, icon: '🥾', image: '', desc: 'Boots made for gliding through foliage.', rarity: 'iron' },
+                    weapon: { id: 'longbow', name: 'Longbow', type: 'weapon', value: 21, price: 85, icon: '🏹', image: '', desc: 'A bow that fires true across the darkness.', rarity: 'steel' }
+                },
+                inventory: [{ id: 'health_potion', name: 'Health Potion', type: 'potion', value: 35, price: 35, icon: '🧪', image: '', desc: 'Restores health when used.', rarity: 'steel' }]
+            },
+            'Boneguard Squire': {
+                equipment: {
+                    helmet: { id: 'squire_helm', name: 'Squire Helm', type: 'helmet', value: 3, price: 45, icon: '🪖', image: '', desc: 'A sturdy helm fit for a veteran squire.', rarity: 'iron' },
+                    chestplate: { id: 'boneguard_plate', name: 'Boneguard Plate', type: 'chestplate', value: 6, price: 70, icon: '🛡️', image: '', desc: 'A heavy plate forged for battlefield service.', rarity: 'steel' },
+                    leggings: { id: 'squire_leggings', name: 'Squire Leggings', type: 'leggings', value: 3, price: 40, icon: '🩳', image: '', desc: 'Reinforced leggings for steady footing.', rarity: 'iron' },
+                    boots: { id: 'squire_boots', name: 'Squire Boots', type: 'boots', value: 3, price: 35, icon: '🥾', image: '', desc: 'Boots built to withstand long patrols.', rarity: 'iron' },
+                    weapon: { id: 'bone_spear', name: 'Bone Spear', type: 'weapon', value: 20, price: 80, icon: '⚔️', image: '', desc: 'A spear pulled from a fallen guard.', rarity: 'iron' }
+                },
+                inventory: [{ id: 'health_potion', name: 'Health Potion', type: 'potion', value: 40, price: 30, icon: '🧪', image: '', desc: 'Restores health when used.', rarity: 'steel' }]
+            }
+        };
+        return gear[role] || {
+            equipment: { helmet: null, chestplate: null, leggings: null, boots: null, weapon: null },
+            inventory: []
+        };
+    }
     constructor(canvas: HTMLCanvasElement, sandbox = false, playerColor: string = '#f39c12') {
         this.canvas = canvas; this.ctx = canvas.getContext('2d')!;
         this.isSandbox = sandbox;
@@ -3070,33 +3256,56 @@ export class Game {
             uiShop = document.getElementById('shop-ui')!,
             uiLoot = document.getElementById('loot-ui')!,
             uiDiag = document.getElementById('dialogue-ui')!;
+        const shopBtn = document.getElementById('open-shop-btn')!;
+        const optionBtn = document.getElementById('dialogue-option-btn')!;
+        const optionBtn2 = document.getElementById('dialogue-option-btn-2')!;
 
         panel.style.display = 'block';
         uiShop.style.display = 'none';
         uiLoot.style.display = 'none';
         uiDiag.style.display = 'none';
+        shopBtn.style.display = 'none';
+        optionBtn.style.display = 'none';
+        optionBtn2.style.display = 'none';
 
         if (e.type === 'recruitable_npc') {
             uiDiag.style.display = 'block';
             const diagText = document.getElementById('dialogue-text')!;
-            document.getElementById('merchant-name')!.innerText = e.name;
-            diagText.innerHTML = `"I've been lost in these halls for ages. If you'll have me, I'll fight by your side."`;
-            
-            const shopBtn = document.getElementById('open-shop-btn')!;
-            shopBtn.innerText = "RECRUIT TO PARTY";
+            document.getElementById('merchant-name')!.innerText = `${e.name} the ${e.role}`;
+            diagText.innerHTML = `"${e.story}"`;
+
+            shopBtn.style.display = 'inline-block';
+            shopBtn.innerText = 'INVITE TO PARTY';
             shopBtn.onclick = () => {
                 if (this.party.length >= 3) {
-                    this.log("Your party is full! (Max 3)");
+                    this.log('Your party is full! (Max 3)');
                     return;
                 }
                 this.party.push(e);
                 e.type = 'party_member';
                 e.dead = false;
+                e.hp = e.maxHp;
                 this.log(`${e.name} joined your party!`);
                 this.closeInteraction();
                 this.updateHUD();
             };
-            
+
+            const options = e.dialogueOptions || [];
+            if (options[0]) {
+                optionBtn.style.display = 'inline-block';
+                optionBtn.innerText = options[0].label;
+                optionBtn.onclick = () => {
+                    diagText.innerHTML = `"${options[0].response}"`;
+                };
+            }
+            if (options[1]) {
+                optionBtn2.style.display = 'inline-block';
+                optionBtn2.innerText = options[1].label;
+                optionBtn2.onclick = () => {
+                    diagText.innerHTML = `"${options[1].response}"`;
+                };
+            }
+
             const questUI = document.getElementById('quest-ui');
             if (questUI) questUI.style.display = 'none';
             return;
@@ -3105,29 +3314,31 @@ export class Game {
         if (e.type === 'npc') {
             uiDiag.style.display = 'block';
             const diagText = document.getElementById('dialogue-text')!;
-            document.getElementById('merchant-name')!.innerText = e.name || "Master Merchant";
+            document.getElementById('merchant-name')!.innerText = e.name || 'Master Merchant';
             this.currentDialogue = MERCHANT_DIALOGUES[Math.floor(Math.random() * MERCHANT_DIALOGUES.length)];
             diagText.innerHTML = `"${this.currentDialogue}"`;
 
-            document.getElementById('open-shop-btn')!.onclick = () => {
+            shopBtn.style.display = 'inline-block';
+            shopBtn.innerText = 'VIEW MERCHANDISE';
+            shopBtn.onclick = () => {
                 uiDiag.style.display = 'none';
                 uiShop.style.display = 'block';
                 this.toggleInventory(true); // Open inventory with shop
                 this.renderShop(e);
             };
-            
+
+            optionBtn.style.display = 'none';
             this.renderQuestUI();
-            
+
             document.getElementById('reroll-quest-btn')!.onclick = () => {
                 this.rerollQuest();
                 this.renderQuestUI();
             };
-            
+
             document.getElementById('claim-quest-reward-btn')!.onclick = () => {
                 this.claimQuestReward();
                 this.renderQuestUI();
             };
-            
             return;
         }
 
@@ -3197,6 +3408,8 @@ export class Game {
     closeInteraction() { document.getElementById('interaction-panel')!.style.display = 'none'; this.activeInteractingEntity = null; this.toggleInventory(false); }
     log(m: string) { this.messageLog.unshift(m); if (this.messageLog.length > 10) this.messageLog.pop(); document.getElementById('log-content')!.innerHTML = this.messageLog.join('<br>'); }
     damageTarget(target: any, source: any, dmg: number) {
+        if (!target || !source || target === source || typeof dmg !== 'number' || dmg <= 0) return;
+        if (target.dead || (source && source.dead)) return;
         if (target === this.player) {
             if (this.player.etherealTimer > 0) return; // Fortress/Ethereal Immunity
             if (this.player.parryTimer > 0) {
@@ -3208,11 +3421,33 @@ export class Game {
             }
         }
         target.hp -= dmg;
+        if (target === this.player && target.hp <= 0) {
+            target.hp = 0;
+            if (!this.isGameOver) {
+                this.isGameOver = true;
+                const deathScreen = document.getElementById('death-screen');
+                if (deathScreen) deathScreen.style.display = 'block';
+                this.log('You have been eviscerated...');
+            }
+            return;
+        }
         if (target !== this.player && target.hp <= 0) {
             target.dead = true;
             if (target === this.enchantedAlly) this.enchantedAlly = null;
             if (target === this.mirrorImage) this.mirrorImage = null;
         }
+    }
+    getSafePullDestination(originX: number, originY: number, destX: number, destY: number) {
+        const maxSteps = 12;
+        let lastFree = { x: originX, y: originY };
+        for (let i = 1; i <= maxSteps; i++) {
+            const t = i / maxSteps;
+            const ix = originX + (destX - originX) * t;
+            const iy = originY + (destY - originY) * t;
+            if (this.level.isWall(ix, iy)) break;
+            lastFree = { x: ix, y: iy };
+        }
+        return lastFree;
     }
     killEnemy(e: any) {
         e.dead = true; this.player.xp += 200; this.log(`${e.enemyType} vanquished.`);
@@ -3533,17 +3768,38 @@ export class Game {
         // Update Party HUD
         const partyHud = document.getElementById('party-hud');
         if (partyHud) {
-            partyHud.innerHTML = this.party.map(m => `
+            partyHud.innerHTML = this.party.map(m => {
+                const nameSafe = (m.name || m.role || 'Adventurer').replace(/"/g, '&quot;');
+                const safeIcon = (m.icon || '👤').replace(/'/g, '&#39;');
+                const avatarSeed = m.name || m.role || 'Adventurer';
+                const avatarSrc = m.image || m.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(avatarSeed)}`;
+                const weaponName = m.equipment?.weapon?.name || 'No Weapon';
+                const armorPieces = ['helmet', 'chestplate', 'leggings', 'boots'].map(slot => m.equipment?.[slot]?.name || null).filter(Boolean);
+                const armorText = armorPieces.length ? armorPieces.join(' • ') : 'No Armor';
+                const invCount = Array.isArray(m.inventory) ? m.inventory.filter((it: any) => it).length : 0;
+                const currentHp = typeof m.hp === 'number' ? m.hp : 0;
+                const maxHp = typeof m.maxHp === 'number' ? m.maxHp : Math.max(100, currentHp);
+                const hpPercent = maxHp > 0 ? Math.min(100, Math.max(0, (currentHp / maxHp) * 100)) : 0;
+                return `
                 <div class="party-member-card">
+                    <div class="party-member-portrait">
+                        <img src="${avatarSrc}" alt="${nameSafe}" onerror="this.style.display='none'; this.parentNode.insertAdjacentHTML('beforeend', '<div class=\'party-avatar-fallback\'>${safeIcon}</div>');" />
+                    </div>
                     <div class="pm-header">
-                        <span><span class="pm-icon">${m.icon || '👤'}</span> ${m.name}</span>
-                        <span>${Math.ceil(m.hp)} / ${m.maxHp}</span>
+                        <span>${m.name || m.role || 'Party Member'}</span>
+                        <span>${Math.ceil(currentHp)} / ${Math.ceil(maxHp)}</span>
                     </div>
                     <div class="pm-hp-container">
-                        <div class="pm-hp-bar" style="width: ${(m.hp / m.maxHp) * 100}%"></div>
+                        <div class="pm-hp-bar" style="width: ${hpPercent}%"></div>
+                    </div>
+                    <div class="pm-equipment">
+                        <div><strong>Weapon:</strong> ${weaponName}</div>
+                        <div><strong>Armor:</strong> ${armorText}</div>
+                        <div><strong>Inventory:</strong> ${invCount} item(s)</div>
                     </div>
                 </div>
-            `).join('');
+            `;
+            }).join('');
         }
     }
     showMeleeTT(a: MeleeAbility, x: number, y: number) {

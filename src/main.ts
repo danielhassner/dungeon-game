@@ -141,6 +141,23 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('start-btn')?.addEventListener('click', () => showColorPicker(false));
     document.getElementById('sandbox-btn')?.addEventListener('click', () => showColorPicker(true));
 
+    const portraitContainer = document.querySelector('.portrait-container') as HTMLElement | null;
+    const statPanel = document.querySelector('.stat-panel') as HTMLElement | null;
+    if (portraitContainer && statPanel) {
+        const updatePanel = () => {
+            if (portraitContainer.matches(':hover') || statPanel.matches(':hover')) {
+                statPanel.classList.add('visible');
+            } else {
+                statPanel.classList.remove('visible');
+            }
+        };
+
+        portraitContainer.addEventListener('mouseenter', () => statPanel.classList.add('visible'));
+        portraitContainer.addEventListener('mouseleave', () => setTimeout(updatePanel, 10));
+        statPanel.addEventListener('mouseenter', () => statPanel.classList.add('visible'));
+        statPanel.addEventListener('mouseleave', () => setTimeout(updatePanel, 10));
+    }
+
     // Color wheel interaction
     const wheelCanvas = document.getElementById('color-wheel-canvas') as HTMLCanvasElement;
     let isPicking = false;
